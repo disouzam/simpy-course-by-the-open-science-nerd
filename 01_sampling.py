@@ -234,5 +234,59 @@ def _(np):
     return
 
 
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## 5. Spawning multiple non-overlapping PRN streams.
+
+    For simulation we ideally want to use multiple streams of random numbers that do not overlap (i.e. they are independent). This is straightforward to implement in Python using `SeedSequence` and a user provided integer seed and the number of independent streams to spawn.
+
+    > As a user we don't need to worry about the quality of the integer seed provided. This is useful for implementing multiple replications and common random numbers.
+
+    by The Open Science Nerd at https://github.com/pythonhealthdatascience/intro-open-sim
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    Here's how we create the seeds from a single user supplied seed.  The returned variable `seeds` is a Python `List`.
+    """)
+    return
+
+
+@app.cell
+def _(np):
+    n_streams = 2
+    user_seed = 1
+
+    seed_sequence = np.random.SeedSequence(user_seed)
+    seeds = seed_sequence.spawn(n_streams)
+    return (seeds,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    We use `seeds` when creating our PRNGs.  For example, one for inter-arrival times and one for service times.
+    """)
+    return
+
+
+@app.cell
+def _(np, seeds):
+    # e.g. to model arrival times
+    arrival_rng = np.random.default_rng(seeds[0])
+    arrival_sample = arrival_rng.normal(loc=25.0, scale=5.0)
+    print(arrival_sample)
+
+    # e.g. to model service times
+    service_rng = np.random.default_rng(seeds[1])
+    service_sample = service_rng.normal(loc=25.0, scale=5.0)
+    print(service_sample)
+    return
+
+
 if __name__ == "__main__":
     app.run()
