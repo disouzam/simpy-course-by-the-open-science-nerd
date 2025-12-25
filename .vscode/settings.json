@@ -1,0 +1,31 @@
+{
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/.DS_Store": true,
+        "**/.git": true,
+        "**/.hg": true,
+        "**/.mypy_cache": true,
+        "**/.ruff_cache": true,
+        "**/.svn": true,
+        "**/.venv": true,
+        "**/Thumbs.db": true
+    },
+    "editor.formatOnSave": true,
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+    "python.languageServer": "Pylance",
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.autoFormatStrings": true,
+    "python.analysis.autoIndent": true,
+    "python.analysis.autoSearchPaths": true,
+    "python.analysis.diagnosticMode": "workspace",
+    "python.analysis.gotoDefinitionInStringLiteral": true,
+    "python.analysis.indexing": true,
+    "[python]": {
+        "diffEditor.ignoreTrimWhitespace": true,
+        "editor.defaultColorDecorators": "always",
+        "gitlens.codeLens.symbolScopes": [],
+        "editor.formatOnType": true,
+        "editor.wordBasedSuggestions": "allDocuments",
+        "editor.defaultFormatter": "charliermarsh.ruff"
+    }
+}
