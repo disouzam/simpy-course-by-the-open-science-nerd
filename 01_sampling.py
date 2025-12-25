@@ -149,10 +149,10 @@ def _(distribution_plot, np, plt):
     rng_1 = np.random.default_rng()
 
     # Step 2 and 3: call the appropriate method of the generator and store result
-    samples = rng_1.uniform(low=10, high=40, size=1_000_000)
+    samples_1 = rng_1.uniform(low=10, high=40, size=1_000_000)
 
     # Illustrate with plot.
-    fig, ax = distribution_plot(samples, bins=50)
+    fig_1, ax_1 = distribution_plot(samples_1, bins=50)
 
     plt.show()
     return
