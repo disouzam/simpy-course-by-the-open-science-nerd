@@ -1,4 +1,11 @@
-def service(identifier, operators, env, service_rng):
+"""
+Implements a service process
+"""
+
+from typing import Any, Generator
+
+
+def service(identifier, operators, env, service_rng) -> Generator[Any, Any, None]:
     """
     Simulates the service process for a call operator
 
