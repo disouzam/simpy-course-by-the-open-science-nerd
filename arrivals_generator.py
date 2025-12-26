@@ -6,6 +6,7 @@ import itertools
 from typing import Any, Generator
 
 import numpy as np
+from colored import Back, Fore, Style
 
 from service_process import service
 
@@ -28,7 +29,9 @@ def arrivals_generator(env, operators) -> Generator[Any, Any, None]:
         inter_arrival_time = arrivals_rng.exponential(60.0 / 100.0)
         yield env.timeout(inter_arrival_time)
 
-        print(f"Call {caller_count} arrives at: {env.now:.2f}")
+        print(
+            f"{Fore.blue}Call {Fore.white}{Back.black} {caller_count} {Fore.blue}{Back.white} arrives at: {env.now:.2f}{Style.reset}"
+        )
 
         env.process(
             service(
