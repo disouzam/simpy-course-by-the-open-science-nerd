@@ -29,12 +29,13 @@ def service(identifier, operators, env, service_rng):
         yield req
 
         waiting_time = env.now - start_wait
-        print(f"Operator answered call {identifier} at {env.now:.2f}")
+        print(
+            f"Call {identifier} answered by operator at {env.now:.2f} - Waiting time was {waiting_time:.2f}\n"
+        )
 
         call_duration = service_rng.triangular(left=5.0, mode=7.0, right=10.0)
         yield env.timeout(call_duration)
 
         print(
-            f"call {identifier} ended {env.now:.2f}; "
-            + f"waiting time was {waiting_time:.2f}"
+            f"\nCall {identifier} ended at {env.now:.2f} - Duration was: {call_duration:.2f}\n"
         )

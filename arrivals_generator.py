@@ -23,6 +23,6 @@ def arrivals_generator(env, operators):
         inter_arrival_time = arrivals_rng.exponential(60.0 / 100.0)
         yield env.timeout(inter_arrival_time)
 
-        print(f"Call arrives at: {env.now:.2f}")
+        print(f"Call {caller_count} arrives at: {env.now:.2f}")
 
         env.process(service(caller_count, operators, env, service_rng))
