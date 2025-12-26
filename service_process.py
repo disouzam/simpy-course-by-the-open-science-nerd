@@ -35,11 +35,13 @@ def service(identifier, operators, env, service_rng) -> Generator[Any, Any, None
     start_wait = env.now
 
     with operators.request() as req:
+        active_operators = operators.count
+        remaining_operators = operators.capacity - active_operators
         yield req
 
         waiting_time = env.now - start_wait
 
-        main_message = f"Call {identifier} answered by operator at {env.now:.2f}"
+        main_message = f"Call {identifier} answered by operator at {env.now:.2f} - Active operators: {active_operators} - Remaining operators: {remaining_operators}"
         if waiting_time < EPSILON:
             print(f"{main_message} - Immediate response\n")
         else:
