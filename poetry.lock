@@ -1807,6 +1807,18 @@ files = [
 ]
 
 [[package]]
+name = "simpy"
+version = "4.1.1"
+description = "Event discrete, process based simulation for Python."
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "simpy-4.1.1-py3-none-any.whl", hash = "sha256:7c5ae380240fd2238671160e4830956f8055830a8317edf5c05e495b3823cd88"},
+    {file = "simpy-4.1.1.tar.gz", hash = "sha256:06d0750a7884b11e0e8e20ce0bc7c6d4ed5f1743d456695340d13fdff95001a6"},
+]
+
+[[package]]
 name = "six"
 version = "1.17.0"
 description = "Python 2 and 3 compatibility utilities"
@@ -2019,4 +2031,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13"
-content-hash = "98198bd65b23dbf969e99dc178294a86df03b7a08ef16ee10d7a14ddff2a72bd"
+content-hash = "8bc76df54def47d1a3a7d55036b7e18465ba37a2a06399de8a35b3b2152bba27"
