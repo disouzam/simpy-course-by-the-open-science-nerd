@@ -30,15 +30,19 @@ def service(identifier, operators, env, service_rng) -> Generator[Any, Any, None
     service_rng:: numpy.random.Generator:
         The random number generator used to sample service times
     """
+    EPSILON = 1e-3
     start_wait = env.now
 
     with operators.request() as req:
         yield req
 
         waiting_time = env.now - start_wait
-        print(
-            f"Call {identifier} answered by operator at {env.now:.2f} - Waiting time was {waiting_time:.2f}\n"
-        )
+
+        main_message = f"Call {identifier} answered by operator at {env.now:.2f}"
+        if waiting_time < EPSILON:
+            print(f"{main_message} - Immediate response\n")
+        else:
+            print(f"{main_message} - Waiting time was {waiting_time:.2f}\n")
 
         call_duration = service_rng.triangular(left=5.0, mode=7.0, right=10.0)
         yield env.timeout(call_duration)
