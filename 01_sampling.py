@@ -11,6 +11,22 @@ def _():
     return (mo,)
 
 
+@app.cell
+def _(mo):
+    mo.md(r"""
+    # Notice of authorship
+
+    Most content in this notebook has been copied / typed based on corresponding code written / made available by Tom Monks (The Open Science Nerd)
+
+    **Repository**: https://github.com/pythonhealthdatascience/intro-open-sim
+
+    **YouTube channel**: https://www.youtube.com/@TheOpenScienceNerd
+
+    **Simpy short course**: https://youtube.com/playlist?list=PLrOeiVQ0eMwF6qE5RLs2brgxBfVUy3MO3&si=ZTorhOyZsbi8XftM
+    """)
+    return
+
+
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
@@ -24,8 +40,6 @@ def _(mo):
     2.  Generating samples from the **uniform**, **exponential** and **normal** distributions.
     3.  Spawning multiple non-overlapping streams of random numbers
     4.  Using OOP to encapsulate PRNGs, distributions and parameters for simulation models.
-
-    by The Open Science Nerd at https://github.com/pythonhealthdatascience/intro-open-sim
     """)
     return
 
@@ -36,8 +50,6 @@ def _(mo):
     ## 1. Imports
 
     We will import `numpy` for our sampling and `matplotlib` to plot our distributions.
-
-    by The Open Science Nerd at https://github.com/pythonhealthdatascience/intro-open-sim
     """)
     return
 
@@ -56,8 +68,6 @@ def _(mo):
     ## 2. Helper functions
 
     The simple function below can be used to automatically produce a plot illustrating a distribution of samples.
-
-    by The Open Science Nerd at https://github.com/pythonhealthdatascience/intro-open-sim
     """)
     return
 
@@ -108,8 +118,6 @@ def _(mo):
     By default `numpy` uses a Pseudo-Random Number Generator (PRNG) called use of the [Permuted Congruential Generator 64-bit](https://www.pcg-random.org/) (PCG64; period = $2^{128}$; maximum number of streams = $2^{127}$).
 
     For more information on `Generator` you can look at [`numpy` online documentation.](https://numpy.org/doc/stable/reference/random/generator.html)
-
-    by The Open Science Nerd at https://github.com/pythonhealthdatascience/intro-open-sim
     """)
     return
 
@@ -137,8 +145,6 @@ def _(mo):
     3. **Store** the result in an appropriately named variable
 
     ### 4.1 Uniform distribution
-
-    by The Open Science Nerd at https://github.com/pythonhealthdatascience/intro-open-sim
     """)
     return
 
@@ -198,8 +204,6 @@ def _(mo):
     ## 4.4 Generating a single sample
 
     If we just need to generate the a single sample we omit the `size` parameter. This returns a scalar value.
-
-    by The Open Science Nerd at https://github.com/pythonhealthdatascience/intro-open-sim
     """)
     return
 
@@ -242,8 +246,6 @@ def _(mo):
     For simulation we ideally want to use multiple streams of random numbers that do not overlap (i.e. they are independent). This is straightforward to implement in Python using `SeedSequence` and a user provided integer seed and the number of independent streams to spawn.
 
     > As a user we don't need to worry about the quality of the integer seed provided. This is useful for implementing multiple replications and common random numbers.
-
-    by The Open Science Nerd at https://github.com/pythonhealthdatascience/intro-open-sim
     """)
     return
 
