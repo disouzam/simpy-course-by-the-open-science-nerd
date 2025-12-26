@@ -4,6 +4,8 @@ Implements a service process
 
 from typing import Any, Generator
 
+EPSILON = 1e-3
+
 
 def service(identifier, operators, env, service_rng) -> Generator[Any, Any, None]:
     """
@@ -30,7 +32,6 @@ def service(identifier, operators, env, service_rng) -> Generator[Any, Any, None
     service_rng:: numpy.random.Generator:
         The random number generator used to sample service times
     """
-    EPSILON = 1e-3
     start_wait = env.now
 
     with operators.request() as req:
