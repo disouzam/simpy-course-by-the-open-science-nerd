@@ -290,5 +290,81 @@ def _(np, seeds):
     return
 
 
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## 6. Encapsulating distributions, parameters, and random seeds.
+
+    When building a simulation model it is often useful to *package up* both a random number generator, parameters for a specific distribution, and a seed in a **python class**.  This allows **easy creation** of generator objects, straightforward sampling, and improves management of streams for each activity in a simulation model.
+
+    As an example below, the class `Exponential` represents the exponential distribution. It accepts a mean value parameter and you can set the random seed.
+
+    We will then instantiate two `Exponential` objects for two different processes in our simulation: acute length of stay, and rehab length of stay.
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    As opposed to the original code, I preferred to move definition of Exponential class to a separate file (_exponential_example_class.py_) to demonstrate the value of modularization of code. It is also interesting to keep notebook as short as possible.
+    """)
+    return
+
+
+@app.cell
+def _():
+    from exponential_example_class import Exponential
+
+    return (Exponential,)
+
+
+@app.cell
+def _(Exponential):
+    acute_los = Exponential(3.0, random_seed=42)
+    rehab_los = Exponential(30.0, random_seed=101)
+    return acute_los, rehab_los
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## First samples
+    """)
+    return
+
+
+@app.cell
+def _(acute_los):
+    acute_los.sample()
+    return
+
+
+@app.cell
+def _(rehab_los):
+    rehab_los.sample()
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## Second samples
+    """)
+    return
+
+
+@app.cell
+def _(acute_los):
+    acute_los.sample()
+    return
+
+
+@app.cell
+def _(rehab_los):
+    rehab_los.sample()
+    return
+
+
 if __name__ == "__main__":
     app.run()
