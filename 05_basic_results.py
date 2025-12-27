@@ -100,9 +100,11 @@ def _(mo):
 
 @app.cell
 def _():
-    results = {}
-    results["waiting_times"] = []
-    return (results,)
+    # results = {}
+    # results["waiting_times"] = []
+
+    # These variables are defined in a cell closed to the content of running the simulation
+    return
 
 
 @app.cell(hide_code=True)
@@ -117,21 +119,18 @@ def _(mo):
     return
 
 
-@app.cell
-def _(TRACE):
-    def trace(msg):
-        """
-        Turning printing of events on and off.
+@app.function
+def trace(msg, enabled=False):
+    """
+    Turning printing of events on and off.
 
-        Params:
-        -------
-        msg: str
-            string to print to screen.
-        """
-        if TRACE:
-            print(msg)
-
-    return (trace,)
+    Params:
+    -------
+    msg: str
+        string to print to screen.
+    """
+    if enabled:
+        print(msg)
 
 
 @app.cell(hide_code=True)
@@ -148,65 +147,63 @@ def _(mo):
     return
 
 
-@app.cell
-def _(results, trace):
-    def service(identifier, operators, env, service_rng):
-        """
-        Simulates the service process for a call operator
+@app.function
+def service(identifier, operators, env, service_rng, results_dict, trace_enabled):
+    """
+    Simulates the service process for a call operator
 
-        1. request and wait for a call operator
-        2. phone triage (triangular)
-        3. exit system
+    1. request and wait for a call operator
+    2. phone triage (triangular)
+    3. exit system
 
-        Params:
-        ------
+    Params:
+    ------
 
-        identifier: int
-            A unique identifer for this caller
+    identifier: int
+        A unique identifer for this caller
 
-        operators: simpy.Resource
-            The pool of call operators that answer calls
-            These are shared across resources.
+    operators: simpy.Resource
+        The pool of call operators that answer calls
+        These are shared across resources.
 
-        env: simpy.Environment
-            The current environent the simulation is running in
-            We use this to pause and restart the process after a delay.
+    env: simpy.Environment
+        The current environent the simulation is running in
+        We use this to pause and restart the process after a delay.
 
-        service_rng: numpy.random.Generator
-            The random number generator used to sample service times
+    service_rng: numpy.random.Generator
+        The random number generator used to sample service times
 
-        """
-        # record the time that call entered the queue
-        start_wait = env.now
+    """
+    # record the time that call entered the queue
+    start_wait = env.now
 
-        # request an operator
-        with operators.request() as req:
-            yield req
+    # request an operator
+    with operators.request() as req:
+        yield req
 
-            # record the waiting time for call to be answered
-            waiting_time = env.now - start_wait
-            results["waiting_times"].append(waiting_time)
+        # record the waiting time for call to be answered
+        waiting_time = env.now - start_wait
+        results_dict["waiting_times"].append(waiting_time)
 
-            trace(f"operator answered call {identifier} at " + f"{env.now:.3f}")
+        trace(f"operator answered call {identifier} at " + f"{env.now:.3f}")
 
-            # sample call duration.
-            call_duration = service_rng.triangular(left=5.0, mode=7.0, right=10.0)
+        # sample call duration.
+        call_duration = service_rng.triangular(left=5.0, mode=7.0, right=10.0)
 
-            # schedule process to begin again after call_duration
-            yield env.timeout(call_duration)
+        # schedule process to begin again after call_duration
+        yield env.timeout(call_duration)
 
-            # print out information for patient.
-            trace(
-                f"call {identifier} ended {env.now:.3f}; "
-                + f"waiting time was {waiting_time:.3f}"
-            )
-
-    return (service,)
+        # print out information for patient.
+        trace(
+            f"call {identifier} ended {env.now:.3f}; "
+            + f"waiting time was {waiting_time:.3f}",
+            trace_enabled,
+        )
 
 
 @app.cell
-def _(itertools, np, service, trace):
-    def arrivals_generator(env, operators):
+def _(itertools, np):
+    def arrivals_generator(env, operators, results_dict, trace_enabled):
         """
         IAT is exponentially distributed
 
@@ -231,11 +228,20 @@ def _(itertools, np, service, trace):
             inter_arrival_time = arrival_rng.exponential(60 / 100)
             yield env.timeout(inter_arrival_time)
 
-            trace(f"call arrives at: {env.now:.3f}")
+            trace(f"call arrives at: {env.now:.3f}", trace_enabled)
 
             # create a new simpy process for serving this caller.
             # we pass in the caller id, the operator resources, env, and the rng
-            env.process(service(caller_count, operators, env, service_rng))
+            env.process(
+                service(
+                    caller_count,
+                    operators,
+                    env,
+                    service_rng,
+                    results_dict,
+                    trace_enabled,
+                )
+            )
 
     return (arrivals_generator,)
 
@@ -255,8 +261,8 @@ def _(mo):
 
 
 @app.cell
-def _(arrivals_generator, np, results, simpy):
-    def single_run(run_length, n_operators):
+def _(arrivals_generator, simpy):
+    def single_run(run_length, n_operators, results_dict, trace_enabled):
         """
         Perform a single replication of the simulation model and
         return the mean waiting time as a result.
@@ -277,20 +283,17 @@ def _(arrivals_generator, np, results, simpy):
         env = simpy.Environment()
         operators = simpy.Resource(env, capacity=n_operators)
 
-        env.process(arrivals_generator(env, operators))
+        env.process(arrivals_generator(env, operators, results_dict, trace_enabled))
         env.run(until=run_length)
         print(f"end of run. simulation clock time = {env.now}")
 
-        # MODIFICATION calculate results on notebook level variables.
-        mean_waiting_time = np.mean(results["waiting_times"])
-
-        return mean_waiting_time
+        return results_dict
 
     return (single_run,)
 
 
 @app.cell
-def _(single_run):
+def _(np, single_run):
     # reset data structure holding results
     results = {}
     results["waiting_times"] = []
@@ -300,12 +303,13 @@ def _(single_run):
     N_OPERATORS = 13
 
     # Turn off caller level results.
-    TRACE = False
+    trace_enabled = True
 
-    mean_waiting_time = single_run(RUN_LENGTH, N_OPERATORS)
+    single_run(RUN_LENGTH, N_OPERATORS, results, trace_enabled)
+    mean_waiting_time = np.mean(results["waiting_times"])
     print("Simulation Complete")
     print(f"Waiting time for call operators: {mean_waiting_time:.2f} minutes")
-    return TRACE, results
+    return
 
 
 if __name__ == "__main__":
