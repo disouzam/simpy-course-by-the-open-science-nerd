@@ -63,8 +63,9 @@ def _():
     import simpy
 
     from logging_and_tracing import trace
+    from service_process import service
 
-    return itertools, np, simpy, trace
+    return itertools, np, service, simpy, trace
 
 
 @app.cell(hide_code=True)
@@ -100,63 +101,6 @@ def _(mo):
     ```
     """)
     return
-
-
-@app.cell
-def _(trace):
-    def service(identifier, operators, env, service_rng, results_dict, trace_enabled):
-        """
-        Simulates the service process for a call operator
-
-        1. request and wait for a call operator
-        2. phone triage (triangular)
-        3. exit system
-
-        Params:
-        ------
-
-        identifier: int
-            A unique identifer for this caller
-
-        operators: simpy.Resource
-            The pool of call operators that answer calls
-            These are shared across resources.
-
-        env: simpy.Environment
-            The current environent the simulation is running in
-            We use this to pause and restart the process after a delay.
-
-        service_rng: numpy.random.Generator
-            The random number generator used to sample service times
-
-        """
-        # record the time that call entered the queue
-        start_wait = env.now
-
-        # request an operator
-        with operators.request() as req:
-            yield req
-
-            # record the waiting time for call to be answered
-            waiting_time = env.now - start_wait
-            results_dict["waiting_times"].append(waiting_time)
-
-            trace(f"operator answered call {identifier} at " + f"{env.now:.3f}")
-
-            # sample call duration.
-            call_duration = service_rng.triangular(left=5.0, mode=7.0, right=10.0)
-
-            # schedule process to begin again after call_duration
-            yield env.timeout(call_duration)
-
-            # print out information for patient.
-            trace(
-                f"call {identifier} ended {env.now:.3f}; "
-                + f"waiting time was {waiting_time:.3f}",
-                trace_enabled,
-            )
-
-    return (service,)
 
 
 @app.cell
