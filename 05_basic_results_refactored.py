@@ -62,7 +62,9 @@ def _():
     import numpy as np
     import simpy
 
-    return itertools, np, simpy
+    from logging_and_tracing import trace
+
+    return itertools, np, simpy, trace
 
 
 @app.cell(hide_code=True)
@@ -89,53 +91,6 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### 2.1 Create list to store wait times
-
-    Our list will be stored within a python **dictionary** we create called `results`. This means that it is simple to add new metrics (e.g. utilisation, queue length) at a later date.
-
-    The dictionary has notebook level scope. This means that **any functions or class** in the notebook can access and/or append to the list access via the key `waiting_times`.
-    """)
-    return
-
-
-@app.cell
-def _():
-    # results = {}
-    # results["waiting_times"] = []
-
-    # These variables are defined in a cell closed to the content of running the simulation
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ### 2.2 Enable/disable print statements
-
-    Throughout the model, we use `print` statements to print progress (e.g. every time an operator starts and ends a call).
-
-    To **enable/disable** printing, we create a helper function called `trace()` that wraps `print`.  We can then set a variable called `TRACE` to switch these print messages on or off.
-    """)
-    return
-
-
-@app.function
-def trace(msg, enabled=False):
-    """
-    Turning printing of events on and off.
-
-    Params:
-    -------
-    msg: str
-        string to print to screen.
-    """
-    if enabled:
-        print(msg)
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
     ### 2.3 Service and arrival functions
 
     The only modification we need to make is to the `service` function.  We will add in a line of code to record the `waiting_time` of the caller as they enter service.
@@ -147,62 +102,65 @@ def _(mo):
     return
 
 
-@app.function
-def service(identifier, operators, env, service_rng, results_dict, trace_enabled):
-    """
-    Simulates the service process for a call operator
+@app.cell
+def _(trace):
+    def service(identifier, operators, env, service_rng, results_dict, trace_enabled):
+        """
+        Simulates the service process for a call operator
 
-    1. request and wait for a call operator
-    2. phone triage (triangular)
-    3. exit system
+        1. request and wait for a call operator
+        2. phone triage (triangular)
+        3. exit system
 
-    Params:
-    ------
+        Params:
+        ------
 
-    identifier: int
-        A unique identifer for this caller
+        identifier: int
+            A unique identifer for this caller
 
-    operators: simpy.Resource
-        The pool of call operators that answer calls
-        These are shared across resources.
+        operators: simpy.Resource
+            The pool of call operators that answer calls
+            These are shared across resources.
 
-    env: simpy.Environment
-        The current environent the simulation is running in
-        We use this to pause and restart the process after a delay.
+        env: simpy.Environment
+            The current environent the simulation is running in
+            We use this to pause and restart the process after a delay.
 
-    service_rng: numpy.random.Generator
-        The random number generator used to sample service times
+        service_rng: numpy.random.Generator
+            The random number generator used to sample service times
 
-    """
-    # record the time that call entered the queue
-    start_wait = env.now
+        """
+        # record the time that call entered the queue
+        start_wait = env.now
 
-    # request an operator
-    with operators.request() as req:
-        yield req
+        # request an operator
+        with operators.request() as req:
+            yield req
 
-        # record the waiting time for call to be answered
-        waiting_time = env.now - start_wait
-        results_dict["waiting_times"].append(waiting_time)
+            # record the waiting time for call to be answered
+            waiting_time = env.now - start_wait
+            results_dict["waiting_times"].append(waiting_time)
 
-        trace(f"operator answered call {identifier} at " + f"{env.now:.3f}")
+            trace(f"operator answered call {identifier} at " + f"{env.now:.3f}")
 
-        # sample call duration.
-        call_duration = service_rng.triangular(left=5.0, mode=7.0, right=10.0)
+            # sample call duration.
+            call_duration = service_rng.triangular(left=5.0, mode=7.0, right=10.0)
 
-        # schedule process to begin again after call_duration
-        yield env.timeout(call_duration)
+            # schedule process to begin again after call_duration
+            yield env.timeout(call_duration)
 
-        # print out information for patient.
-        trace(
-            f"call {identifier} ended {env.now:.3f}; "
-            + f"waiting time was {waiting_time:.3f}",
-            trace_enabled,
-        )
+            # print out information for patient.
+            trace(
+                f"call {identifier} ended {env.now:.3f}; "
+                + f"waiting time was {waiting_time:.3f}",
+                trace_enabled,
+            )
+
+    return (service,)
 
 
 @app.cell
-def _(itertools, np):
+def _(itertools, np, service, trace):
     def arrivals_generator(env, operators, results_dict, trace_enabled):
         """
         IAT is exponentially distributed
