@@ -6,10 +6,14 @@ from typing import Any, Generator
 
 from colored import Back, Fore, Style
 
+from logging_and_tracing import trace
+
 EPSILON = 1e-3
 
 
-def service(identifier, operators, env, service_rng) -> Generator[Any, Any, None]:
+def service(
+    identifier, operators, env, service_rng, results_dict=None, trace_enabled=False
+) -> Generator[Any, Any, None]:
     """
     Simulates the service process for a call operator
 
@@ -31,29 +35,42 @@ def service(identifier, operators, env, service_rng) -> Generator[Any, Any, None
         The current environment the simulation is running in
         We use this to pause and restart the process after a delay
 
-    service_rng:: numpy.random.Generator:
+    service_rng: numpy.random.Generator
         The random number generator used to sample service times
     """
+    # record the time that call entered the queue
     start_wait = env.now
 
+    # request an operator
     with operators.request() as req:
         active_operators = operators.count
         remaining_operators = operators.capacity - active_operators
         yield req
 
+        # record the waiting time for call to be answered
         waiting_time = env.now - start_wait
 
+        if results_dict is not None:
+            results_dict["waiting_times"].append(waiting_time)
+
         main_message = f"Call {Fore.white}{Back.black} {identifier} {Style.reset} answered by operator at {env.now:.2f} - Active operators: {active_operators} - Remaining operators: {remaining_operators}"
+
         if waiting_time < EPSILON:
-            print(f"{main_message} - Immediate response\n")
+            trace(f"{main_message} - Immediate response\n", trace_enabled)
         else:
-            print(
-                f"{main_message} -  {Fore.white}{Back.red} Waiting time was {waiting_time:.2f}{Style.reset}\n"
+            trace(
+                f"{main_message} -  {Fore.white}{Back.red} Waiting time was {waiting_time:.2f}{Style.reset}\n",
+                trace_enabled,
             )
 
+        # sample call duration.
         call_duration = service_rng.triangular(left=5.0, mode=7.0, right=10.0)
+
+        # schedule process to begin again after call_duration
         yield env.timeout(call_duration)
 
-        print(
-            f"\n{Fore.black}{Back.green}Call {Fore.white}{Back.black} {identifier} {Fore.black}{Back.green} ended at {env.now:.2f} - Duration was: {call_duration:.2f}{Style.reset}\n"
+        # print out information for patient.
+        trace(
+            f"\n{Fore.black}{Back.green}Call {Fore.white}{Back.black} {identifier} {Fore.black}{Back.green} ended at {env.now:.2f} - Duration was: {call_duration:.2f}{Style.reset}\n",
+            trace_enabled,
         )
