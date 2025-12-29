@@ -6,14 +6,11 @@ from typing import Any, Generator
 
 from colored import Back, Fore, Style
 
+import sensible_constants as sconst
 from logging_and_tracing import trace
 
-EPSILON = 1e-3
 
-
-def service(
-    identifier, operators, env, service_rng, results_dict=None, trace_enabled=False
-) -> Generator[Any, Any, None]:
+def service(identifier, env, args, trace_enabled=False) -> Generator[Any, Any, None]:
     """
     Simulates the service process for a call operator
 
@@ -27,9 +24,6 @@ def service(
     identifier: int
         A unique identifier for this caller
 
-    operators: simpy.Resource
-        The pool of call operators that answer calls
-        These are shared across resources.
 
     env: simpy.Environment
         The current environment the simulation is running in
@@ -37,25 +31,32 @@ def service(
 
     service_rng: numpy.random.Generator
         The random number generator used to sample service times
+
+    args: Experiment
+        The settings and input parameters for the current experiment
+
     """
     # record the time that call entered the queue
     start_wait = env.now
 
-    # request an operator
-    with operators.request() as req:
-        active_operators = operators.count
-        remaining_operators = operators.capacity - active_operators
+    # MODIFICATION: request an operator - stored in the Experiment
+    with args.operators.request() as req:
+        active_operators = args.operators.count
+        remaining_operators = args.operators.capacity - active_operators
         yield req
 
         # record the waiting time for call to be answered
         waiting_time = env.now - start_wait
 
-        if results_dict is not None:
-            results_dict["waiting_times"].append(waiting_time)
+        if args.results is not None:
+            # ######################################################################
+            # MODIFICATION: store the results for an experiment
+            args.results["waiting_times"].append(waiting_time)
+            # ######################################################################
 
         main_message = f"Call {Fore.white}{Back.black} {identifier} {Style.reset} answered by operator at {env.now:.2f} - Active operators: {active_operators} - Remaining operators: {remaining_operators}"
 
-        if waiting_time < EPSILON:
+        if waiting_time < sconst.EPSILON:
             trace(f"{main_message} - Immediate response\n", trace_enabled)
         else:
             trace(
@@ -63,11 +64,18 @@ def service(
                 trace_enabled,
             )
 
-        # sample call duration.
-        call_duration = service_rng.triangular(left=5.0, mode=7.0, right=10.0)
+        # ######################################################################
+        # MODIFICATION: the sample distribution is defined by the experiment.
+        # sample call duration
+        call_duration = args.call_dist.sample()
+        # ######################################################################
 
         # schedule process to begin again after call_duration
         yield env.timeout(call_duration)
+
+        # update the total call_duration
+        args.results["call_durations"].append(call_duration)
+        args.results["total_call_duration"] += call_duration
 
         # print out information for patient.
         trace(

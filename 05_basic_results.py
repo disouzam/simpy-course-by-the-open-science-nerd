@@ -153,21 +153,21 @@ def service(identifier, operators, env, service_rng, results_dict, trace_enabled
     Simulates the service process for a call operator
 
     1. request and wait for a call operator
-    2. phone triage (triangular)
+    2. phone triage (triangular distribution)
     3. exit system
 
     Params:
     ------
 
     identifier: int
-        A unique identifer for this caller
+        A unique identifier for this caller
 
     operators: simpy.Resource
         The pool of call operators that answer calls
         These are shared across resources.
 
     env: simpy.Environment
-        The current environent the simulation is running in
+        The current environment the simulation is running in
         We use this to pause and restart the process after a delay.
 
     service_rng: numpy.random.Generator
