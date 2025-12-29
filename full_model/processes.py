@@ -122,3 +122,24 @@ def arrivals_generator(env, args):
 
         # create a service process
         env.process(service(caller_count, env, args))
+
+
+def warmup_complete(warm_up_period, env, args):
+    """
+    End of warm-up period event. Used to reset results collection variables.
+
+    Parameters:
+    ----------
+    warm_up_period: float
+        Duration of warm-up period in simultion time units
+
+    env: simpy.Environment
+        The simpy environment
+
+    args: Experiment
+        The simulation experiment that contains the results being collected.
+    """
+    yield env.timeout(warm_up_period)
+    trace(f"{env.now:.2f}: Warm up complete.")
+
+    args.init_results_variables()

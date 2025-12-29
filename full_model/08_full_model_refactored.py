@@ -139,9 +139,8 @@ def _(mo):
 @app.cell
 def _():
     from processes import arrivals_generator
-    from tracing import trace
 
-    return arrivals_generator, trace
+    return (arrivals_generator,)
 
 
 @app.cell(hide_code=True)
@@ -159,26 +158,8 @@ def _(mo):
 
 
 @app.cell
-def _(trace):
-    def warmup_complete(warm_up_period, env, args):
-        """
-        End of warm-up period event. Used to reset results collection variables.
-
-        Parameters:
-        ----------
-        warm_up_period: float
-            Duration of warm-up period in simultion time units
-
-        env: simpy.Environment
-            The simpy environment
-
-        args: Experiment
-            The simulation experiment that contains the results being collected.
-        """
-        yield env.timeout(warm_up_period)
-        trace(f"{env.now:.2f}: Warm up complete.")
-
-        args.init_results_variables()
+def _():
+    from processes import warmup_complete
 
     return (warmup_complete,)
 
