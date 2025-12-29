@@ -84,63 +84,9 @@ def _(mo):
 
 @app.cell
 def _():
-    # default resources
-    N_OPERATORS = 13
+    import simulation_constants as sim_const
 
-    # ##############################################################################
-    # MODIFICATION: number of nurses available
-    N_NURSES = 10
-    # ##############################################################################
-
-    # default mean inter-arrival time (exp)
-    MEAN_IAT = 60 / 100
-
-    ## default service time parameters (triangular)
-    CALL_LOW = 5.0
-    CALL_MODE = 7.0
-    CALL_HIGH = 10.0
-
-    # ##############################################################################
-    # MODIFICATION: nurse defaults
-
-    # nurse uniform distribution parameters
-    NURSE_CALL_LOW = 10.0
-    NURSE_CALL_HIGH = 20.0
-
-    # probability of a callback (parameter of Bernoulli)
-    CHANCE_CALLBACK = 0.4
-
-    # sampling settings - we now need 4 streams
-    N_STREAMS = 4
-    DEFAULT_RND_SET = 0
-    # ##############################################################################
-
-    # Boolean switch to simulation results as the model runs
-    TRACE = False
-
-    # run variables
-    RESULTS_COLLECTION_PERIOD = 1000
-
-    # ##############################################################################
-    # MODIFICATON: added a warm-up period, by default we will not use it.
-    WARM_UP_PERIOD = 0
-    # ##############################################################################
-    return (
-        CALL_HIGH,
-        CALL_LOW,
-        CALL_MODE,
-        CHANCE_CALLBACK,
-        DEFAULT_RND_SET,
-        MEAN_IAT,
-        NURSE_CALL_HIGH,
-        NURSE_CALL_LOW,
-        N_NURSES,
-        N_OPERATORS,
-        N_STREAMS,
-        RESULTS_COLLECTION_PERIOD,
-        TRACE,
-        WARM_UP_PERIOD,
-    )
+    return (sim_const,)
 
 
 @app.cell(hide_code=True)
@@ -359,24 +305,7 @@ def _(mo):
 
 
 @app.cell
-def _(
-    Bernoulli,
-    CALL_HIGH,
-    CALL_LOW,
-    CALL_MODE,
-    CHANCE_CALLBACK,
-    DEFAULT_RND_SET,
-    Exponential,
-    MEAN_IAT,
-    NURSE_CALL_HIGH,
-    NURSE_CALL_LOW,
-    N_NURSES,
-    N_OPERATORS,
-    N_STREAMS,
-    Triangular,
-    Uniform,
-    np,
-):
+def _(Bernoulli, Exponential, Triangular, Uniform, np, sim_const):
     class Experiment:
         """
         Encapsulates the concept of an experiment 🧪 with the urgent care
@@ -391,19 +320,19 @@ def _(
 
         def __init__(
             self,
-            random_number_set=DEFAULT_RND_SET,
-            n_streams=N_STREAMS,
-            n_operators=N_OPERATORS,
-            mean_iat=MEAN_IAT,
-            call_low=CALL_LOW,
-            call_mode=CALL_MODE,
-            call_high=CALL_HIGH,
+            random_number_set=sim_const.DEFAULT_RND_SET,
+            n_streams=sim_const.N_STREAMS,
+            n_operators=sim_const.N_OPERATORS,
+            mean_iat=sim_const.MEAN_IAT,
+            call_low=sim_const.CALL_LOW,
+            call_mode=sim_const.CALL_MODE,
+            call_high=sim_const.CALL_HIGH,
             # ######################################################################
             # MODIFICATION: nurse parameters
-            n_nurses=N_NURSES,
-            chance_callback=CHANCE_CALLBACK,
-            nurse_call_low=NURSE_CALL_LOW,
-            nurse_call_high=NURSE_CALL_HIGH,
+            n_nurses=sim_const.N_NURSES,
+            chance_callback=sim_const.CHANCE_CALLBACK,
+            nurse_call_low=sim_const.NURSE_CALL_LOW,
+            nurse_call_high=sim_const.NURSE_CALL_HIGH,
             ########################################################################
         ):
             """
@@ -521,7 +450,7 @@ def _(mo):
 
 
 @app.cell
-def _(TRACE):
+def _(sim_const):
     def trace(msg):
         """
         Turing printing of events on and off.
@@ -531,7 +460,7 @@ def _(TRACE):
         msg: str
             string to print to screen.
         """
-        if TRACE:
+        if sim_const.TRACE:
             print(msg)
 
     return (trace,)
@@ -727,16 +656,12 @@ def _(mo):
 
 
 @app.cell
-def _(
-    RESULTS_COLLECTION_PERIOD,
-    WARM_UP_PERIOD,
-    arrivals_generator,
-    np,
-    simpy,
-    warmup_complete,
-):
+def _(arrivals_generator, np, sim_const, simpy, warmup_complete):
     def single_run(
-        experiment, rep=0, wu_period=WARM_UP_PERIOD, rc_period=RESULTS_COLLECTION_PERIOD
+        experiment,
+        rep=0,
+        wu_period=sim_const.WARM_UP_PERIOD,
+        rc_period=sim_const.RESULTS_COLLECTION_PERIOD,
     ):
         """
         Perform a single run of the model and return the results
@@ -826,11 +751,11 @@ def _(
 
 
 @app.cell
-def _(RESULTS_COLLECTION_PERIOD, WARM_UP_PERIOD, np, pd, single_run):
+def _(np, pd, sim_const, single_run):
     def multiple_replications(
         experiment,
-        wu_period=WARM_UP_PERIOD,
-        rc_period=RESULTS_COLLECTION_PERIOD,
+        wu_period=sim_const.WARM_UP_PERIOD,
+        rc_period=sim_const.RESULTS_COLLECTION_PERIOD,
         n_reps=5,
     ):
         """
