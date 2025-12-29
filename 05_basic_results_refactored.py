@@ -58,14 +58,16 @@ def _(mo):
 @app.cell
 def _():
     import itertools
+    from collections import namedtuple
 
     import numpy as np
     import simpy
+    from colored import Back, Fore, Style
 
     from logging_and_tracing import trace
     from service_process import service
 
-    return itertools, np, service, simpy, trace
+    return itertools, np, service, simpy, trace, namedtuple, Back, Fore, Style
 
 
 @app.cell(hide_code=True)
@@ -104,7 +106,7 @@ def _(mo):
 
 
 @app.cell
-def _(itertools, np, service, trace):
+def _(itertools, np, service, trace, namedtuple, Fore, Back, Style):
     def arrivals_generator(env, operators, results_dict, trace_enabled):
         """
         IAT is exponentially distributed
@@ -123,6 +125,13 @@ def _(itertools, np, service, trace):
         # create the service rng that we pass to each service process created
         service_rng = np.random.default_rng()
 
+        class Call_dist:
+            def __init__(self, rng):
+                self.rng = rng
+
+            def sample(self):
+                return self.rng.triangular(left=5.0, mode=7.0, right=10.0)
+
         # use itertools as it provides an infinite loop
         # with a counter variable that we can use for unique Ids
         for caller_count in itertools.count(start=1):
@@ -130,17 +139,26 @@ def _(itertools, np, service, trace):
             inter_arrival_time = arrival_rng.exponential(60 / 100)
             yield env.timeout(inter_arrival_time)
 
-            trace(f"call arrives at: {env.now:.3f}", trace_enabled)
+            trace(
+                f"{Fore.blue}Call {Fore.white}{Back.black} {caller_count} {Style.reset} {Fore.blue} arrives at: {env.now:.2f}{Style.reset}",
+                enabled=trace_enabled,
+            )
 
             # create a new simpy process for serving this caller.
             # we pass in the caller id, the operator resources, env, and the rng
+
+            args_tuple = namedtuple("args_tuple", ["operators", "call_dist", "results"])
+
+            call_dist = Call_dist(service_rng)
+            args = args_tuple(
+                operators=operators, call_dist=call_dist, results=results_dict
+            )
+
             env.process(
                 service(
                     caller_count,
-                    operators,
                     env,
-                    service_rng,
-                    results_dict,
+                    args,
                     trace_enabled,
                 )
             )
@@ -164,7 +182,7 @@ def _(mo):
 
 @app.cell
 def _(arrivals_generator, simpy):
-    def single_run(run_length, n_operators, results_dict, trace_enabled):
+    def single_run(run_length, n_operators, trace_enabled):
         """
         Perform a single replication of the simulation model and
         return the mean waiting time as a result.
@@ -185,9 +203,16 @@ def _(arrivals_generator, simpy):
         env = simpy.Environment()
         operators = simpy.Resource(env, capacity=n_operators)
 
+        results_dict = {}
+        results_dict["waiting_times"] = []
+        results_dict["call_durations"] = []
+
+        # total operator usage time for utilisation calculation.
+        results_dict["total_call_duration"] = 0.0
+
         env.process(arrivals_generator(env, operators, results_dict, trace_enabled))
         env.run(until=run_length)
-        print(f"end of run. simulation clock time = {env.now}")
+        print(f"End of run. simulation clock time = {env.now}")
 
         return results_dict
 
@@ -196,10 +221,6 @@ def _(arrivals_generator, simpy):
 
 @app.cell
 def _(np, single_run):
-    # reset data structure holding results
-    results = {}
-    results["waiting_times"] = []
-
     # model parameters
     RUN_LENGTH = 1000
     N_OPERATORS = 13
@@ -207,7 +228,7 @@ def _(np, single_run):
     # Turn off caller level results.
     trace_enabled = True
 
-    single_run(RUN_LENGTH, N_OPERATORS, results, trace_enabled)
+    results = single_run(RUN_LENGTH, N_OPERATORS, trace_enabled)
     mean_waiting_time = np.mean(results["waiting_times"])
     print("Simulation Complete")
     print(f"Waiting time for call operators: {mean_waiting_time:.2f} minutes")
