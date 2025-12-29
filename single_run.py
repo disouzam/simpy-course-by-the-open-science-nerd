@@ -5,7 +5,9 @@ import sensible_constants as sconst
 from arrivals_generator import arrivals_generator
 
 
-def single_run(experiment, rep=0, rc_period=sconst.RESULTS_COLLECTION_PERIOD):
+def single_run(
+    experiment, rep=0, rc_period=sconst.RESULTS_COLLECTION_PERIOD, trace_enabled=False
+):
     """
     Perform a single run of the model and return the results
 
@@ -34,7 +36,7 @@ def single_run(experiment, rep=0, rc_period=sconst.RESULTS_COLLECTION_PERIOD):
     experiment.operators = simpy.Resource(env, capacity=experiment.n_operators)
 
     # we pass the experiment to the arrivals generator
-    env.process(arrivals_generator(env, experiment))
+    env.process(arrivals_generator(env, experiment, trace_enabled))
     env.run(until=rc_period)
 
     # end of run results: calculate mean waiting time

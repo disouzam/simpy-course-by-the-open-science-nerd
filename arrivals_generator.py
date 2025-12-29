@@ -7,11 +7,11 @@ from typing import Any, Generator
 
 from colored import Back, Fore, Style
 
-import sensible_constants as sconst
+from logging_and_tracing import trace
 from service_process import service
 
 
-def arrivals_generator(env, args) -> Generator[Any, Any, None]:
+def arrivals_generator(env, args, trace_enabled=False) -> Generator[Any, Any, None]:
     """
     Simulates the call arrival process and spawns
     Inter-arrival time (IAT) is exponentially distributed
@@ -34,15 +34,16 @@ def arrivals_generator(env, args) -> Generator[Any, Any, None]:
 
         yield env.timeout(inter_arrival_time)
 
-        print(
-            f"{Fore.blue}Call {Fore.white}{Back.black} {caller_count} {Style.reset} {Fore.blue} arrives at: {env.now:.2f}{Style.reset}"
+        trace(
+            f"{Fore.blue}Call {Fore.white}{Back.black} {caller_count} {Style.reset} {Fore.blue} arrives at: {env.now:.2f}{Style.reset}",
+            enabled=trace_enabled,
         )
 
         # ######################################################################
         # MODIFICATION: we pass the experiment to the service function
         env.process(
             service(
-                identifier=caller_count, env=env, args=args, trace_enabled=sconst.TRACE
+                identifier=caller_count, env=env, args=args, trace_enabled=trace_enabled
             )
         )
         # ######################################################################

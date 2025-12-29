@@ -198,9 +198,10 @@ def _(mo):
 @app.cell
 def _(Experiment):
     import single_run as sr
+    from sensible_constants import TRACE
 
     default_scenario = Experiment()
-    results = sr.single_run(default_scenario)
+    results = sr.single_run(default_scenario, TRACE)
     return (results,)
 
 
