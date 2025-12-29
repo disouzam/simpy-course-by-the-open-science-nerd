@@ -139,18 +139,8 @@ def _(mo):
 
 
 @app.cell
-def _(sim_const):
-    def trace(msg):
-        """
-        Turing printing of events on and off.
-
-        Params:
-        -------
-        msg: str
-            string to print to screen.
-        """
-        if sim_const.TRACE:
-            print(msg)
+def _():
+    from tracing import trace
 
     return (trace,)
 
