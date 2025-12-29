@@ -62,12 +62,11 @@ def _():
 
     import numpy as np
     import simpy
-    from colored import Back, Fore, Style
 
     from logging_and_tracing import trace
     from service_process import service
 
-    return itertools, np, service, simpy, trace, namedtuple, Back, Fore, Style
+    return itertools, namedtuple, np, service, simpy, trace
 
 
 @app.cell(hide_code=True)
@@ -106,7 +105,9 @@ def _(mo):
 
 
 @app.cell
-def _(itertools, np, service, trace, namedtuple, Fore, Back, Style):
+def _(itertools, namedtuple, np, service, trace):
+    from colored import Back, Fore, Style
+
     def arrivals_generator(env, operators, results_dict, trace_enabled):
         """
         IAT is exponentially distributed
