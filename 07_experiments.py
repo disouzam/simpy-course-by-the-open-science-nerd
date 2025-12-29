@@ -59,9 +59,14 @@ def _(mo):
 
 @app.cell
 def _():
+    import numpy as np
+    import pandas as pd
     import simpy
 
-    return (simpy,)
+    import single_run as sr
+    from sensible_constants import RESULTS_COLLECTION_PERIOD, TRACE
+
+    return RESULTS_COLLECTION_PERIOD, TRACE, np, pd, simpy, sr
 
 
 @app.cell(hide_code=True)
@@ -196,10 +201,7 @@ def _(mo):
 
 
 @app.cell
-def _(Experiment):
-    import single_run as sr
-    from sensible_constants import TRACE
-
+def _(Experiment, TRACE, sr):
     default_scenario = Experiment()
     results = sr.single_run(default_scenario, TRACE)
     return (results,)
@@ -213,6 +215,64 @@ def _(results):
         + f"Operator Utilisation {results['02_operator_util']:.2f}%\n"
         + f"Total call duration {results['03_total_call_duration']:.2f} mins"
     )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## Multiple Replications
+    """)
+    return
+
+
+@app.cell
+def _(RESULTS_COLLECTION_PERIOD, np, pd, sr):
+    def multiple_replications(
+        experiment, rc_period=RESULTS_COLLECTION_PERIOD, n_reps=5
+    ):
+        """
+        Perform multiple replications of the model.
+
+        Params:
+        ------
+        experiment: Experiment
+            The experiment/paramaters to use with model
+
+        rc_period: float, optional (default=DEFAULT_RESULTS_COLLECTION_PERIOD)
+            results collection period.
+            the number of minutes to run the model to collect results
+
+        n_reps: int, optional (default=5)
+            Number of independent replications to run.
+
+        Returns:
+        --------
+        pandas.DataFrame
+        """
+
+        # loop over single run to generate results dicts in a python list.
+        results = [sr.single_run(experiment, rep, rc_period) for rep in range(n_reps)]
+
+        # format and return results in a dataframe
+        df_results = pd.DataFrame(results)
+        df_results.index = np.arange(1, len(df_results) + 1)
+        df_results.index.name = "rep"
+        return df_results
+
+    return (multiple_replications,)
+
+
+@app.cell
+def _(Experiment, mo, multiple_replications):
+    default_scenario_2 = Experiment()
+    results_2 = multiple_replications(default_scenario_2)
+
+    format_mapping = {}
+    for col in results_2.columns:
+        format_mapping[col] = "{:.2f}"
+
+    mo.ui.table(results_2, format_mapping=format_mapping)
     return
 
 
