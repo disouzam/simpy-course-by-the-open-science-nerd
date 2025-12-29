@@ -47,9 +47,11 @@ def _(mo):
 
 @app.cell
 def _():
+    from collections import namedtuple
+
     import simpy
 
-    return (simpy,)
+    return (simpy, namedtuple)
 
 
 @app.cell(hide_code=True)
@@ -142,7 +144,9 @@ def _(mo):
 
 
 @app.cell
-def _(arrivals_generator, simpy):
+def _(arrivals_generator, simpy, namedtuple):
+    import numpy as np
+
     # model parameters
     RUN_LENGTH = 100
     N_OPERATORS = 13
@@ -151,7 +155,47 @@ def _(arrivals_generator, simpy):
     env = simpy.Environment()
     operators = simpy.Resource(env, capacity=N_OPERATORS)
 
-    env.process(arrivals_generator(env, operators))
+    results_dict = {}
+    results_dict["waiting_times"] = []
+    results_dict["call_durations"] = []
+
+    # total operator usage time for utilisation calculation.
+    results_dict["total_call_duration"] = 0.0
+
+    args_tuple = namedtuple(
+        "args_tuple", ["operators", "arrival_dist", "call_dist", "results"]
+    )
+
+    # create the arrival process rng
+    arrival_rng = np.random.default_rng()
+
+    # create the service rng that we pass to each service process created
+    service_rng = np.random.default_rng()
+
+    class Arrival_dist:
+        def __init__(self, rng):
+            self.rng = rng
+
+        def sample(self):
+            return self.rng.exponential(60 / 100)
+
+    class Call_dist:
+        def __init__(self, rng):
+            self.rng = rng
+
+        def sample(self):
+            return self.rng.triangular(left=5.0, mode=7.0, right=10.0)
+
+    arrival_dist = Arrival_dist(arrival_rng)
+    call_dist = Call_dist(service_rng)
+    args = args_tuple(
+        operators=operators,
+        arrival_dist=arrival_dist,
+        call_dist=call_dist,
+        results=results_dict,
+    )
+
+    env.process(arrivals_generator(env, args, operators))
     env.run(until=RUN_LENGTH)
     print(f"end of run. simulation clock time = {env.now}")
     return
