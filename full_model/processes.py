@@ -1,5 +1,7 @@
 import itertools
 
+import simulation_constants as sim_const
+from colored import Back, Fore, Style
 from tracing import trace
 
 
@@ -7,16 +9,22 @@ def nurse_consultation(identifier, env, args):
     """
     simulates the wait for an consultation with a nurse on the phone.
 
-    1. request and wait for a nurse resource
-    2. phone consultation (uniform)
-    3. release nurse and exit system
+    1. Request and wait for a nurse resource
+    2. Phone consultation (uniform distribution)
+    3. Release nurse and exit system
 
     """
-    trace(f"Patient {identifier} waiting for nurse call back")
+    trace_enabled = True
+    trace(
+        f"{Fore.black}{Back.yellow}Patient {Fore.white}{Back.black} {identifier} {Fore.black}{Back.yellow} waiting for nurse call back{Style.reset}",
+        enabled=trace_enabled,
+    )
     start_nurse_wait = env.now
 
     # request a nurse
     with args.nurses.request() as req:
+        active_nurses = args.nurses.count
+        remaining_nurses = args.nurses.capacity - active_nurses
         yield req
 
         # record the waiting time for nurse call back
@@ -25,15 +33,32 @@ def nurse_consultation(identifier, env, args):
 
         # sample nurse the duration of the nurse consultation
         nurse_call_duration = args.nurse_dist.sample()
+        main_message = (
+            f"\n{Fore.dark_orange}{Back.grey_0}Nurse called back patient {Fore.white}{Back.black} {identifier} {Fore.dark_orange}{Back.grey_0} at "
+            + f"{env.now:.2f} - Active nurses: {active_nurses} - Remaining nurses: {remaining_nurses}{Style.reset}"
+        )
 
-        trace(f"nurse called back patient {identifier} at " + f"{env.now:.3f}")
+        if nurse_waiting_time < sim_const.EPSILON:
+            trace(
+                f"{main_message} - Immediate response",
+                enabled=trace_enabled,
+            )
+        else:
+            trace(
+                f"{main_message} -  {Fore.white}{Back.red} Waiting time was {nurse_waiting_time:.2f}{Style.reset}",
+                trace_enabled,
+            )
 
         # schedule process to begin again after call duration
         yield env.timeout(nurse_call_duration)
 
         args.results["total_nurse_call_duration"] += nurse_call_duration
 
-        trace(f"nurse consultation for {identifier}" + f" competed at {env.now:.3f}")
+        trace(
+            f"\n{Fore.dark_orange}{Back.grey_0}Nurse consultation for {Fore.white}{Back.black} {identifier} {Fore.dark_orange}{Back.grey_0}"
+            + f" completed at {env.now:.2f} {Style.reset}",
+            enabled=trace_enabled,
+        )
 
 
 def service(identifier, env, args):
@@ -64,6 +89,8 @@ def service(identifier, env, args):
 
     # request an operator - stored in the Experiment
     with args.operators.request() as req:
+        active_operators = args.operators.count
+        remaining_operators = args.operators.capacity - active_operators
         yield req
 
         # record the waiting time for call to be answered
@@ -71,7 +98,17 @@ def service(identifier, env, args):
 
         # store the results for an experiment
         args.results["waiting_times"].append(waiting_time)
-        trace(f"operator answered call {identifier} at " + f"{env.now:.3f}")
+
+        main_message = f"\nCall {Fore.white}{Back.black} {identifier} {Style.reset} answered by operator at {env.now:.2f} - Active operators: {active_operators} - Remaining operators: {remaining_operators}"
+
+        trace_enabled = True
+        if waiting_time < sim_const.EPSILON:
+            trace(f"{main_message} - Immediate response", trace_enabled)
+        else:
+            trace(
+                f"{main_message} -  {Fore.white}{Back.red} Waiting time was {waiting_time:.2f}{Style.reset}",
+                trace_enabled,
+            )
 
         # the sample distribution is defined by the experiment.
         call_duration = args.call_dist.sample()
@@ -84,8 +121,8 @@ def service(identifier, env, args):
 
         # print out information for patient.
         trace(
-            f"call {identifier} ended {env.now:.3f}; "
-            + f"waiting time was {waiting_time:.3f}"
+            f"\n{Fore.black}{Back.green}Call {Fore.white}{Back.black} {identifier} {Fore.black}{Back.green} ended at {env.now:.2f} - Duration was: {call_duration:.2f}{Style.reset}\n",
+            trace_enabled,
         )
 
     # ##########################################################################
@@ -118,7 +155,11 @@ def arrivals_generator(env, args):
         inter_arrival_time = args.arrival_dist.sample()
         yield env.timeout(inter_arrival_time)
 
-        trace(f"call arrives at: {env.now:.3f}")
+        trace_enabled = True
+        trace(
+            f"\n{Fore.blue}Call {Fore.white}{Back.black} {caller_count} {Style.reset} {Fore.blue} arrives at: {env.now:.2f}{Style.reset}",
+            enabled=trace_enabled,
+        )
 
         # create a service process
         env.process(service(caller_count, env, args))

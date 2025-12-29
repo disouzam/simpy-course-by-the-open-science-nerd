@@ -1,3 +1,5 @@
+EPSILON = 1e-3
+
 # default resources
 N_OPERATORS = 13
 
@@ -30,7 +32,7 @@ DEFAULT_RND_SET = 0
 # ##############################################################################
 
 # Boolean switch to simulation results as the model runs
-TRACE = False
+TRACE = True
 
 # run variables
 RESULTS_COLLECTION_PERIOD = 1000
