@@ -83,6 +83,7 @@ def service(identifier, env, args):
         The settings and input parameters for the current experiment
 
     """
+    trace_enabled = True
 
     # record the time that call entered the queue
     start_wait = env.now
@@ -91,6 +92,13 @@ def service(identifier, env, args):
     with args.operators.request() as req:
         active_operators = args.operators.count
         remaining_operators = args.operators.capacity - active_operators
+
+        mem_address_of_req = hex(id(req))
+        if mem_address_of_req in args.operators_id:
+            raise Exception()
+
+        args.operators_id.add(mem_address_of_req)
+        trace(f"{len(args.operators_id)}: {args.operators_id}", trace_enabled)
         yield req
 
         # record the waiting time for call to be answered
@@ -101,7 +109,6 @@ def service(identifier, env, args):
 
         main_message = f"\nCall {Fore.white}{Back.black} {identifier} {Style.reset} answered by operator at {env.now:.2f} - Active operators: {active_operators} - Remaining operators: {remaining_operators}"
 
-        trace_enabled = True
         if waiting_time < sim_const.EPSILON:
             trace(f"{main_message} - Immediate response", trace_enabled)
         else:
