@@ -49,21 +49,17 @@ def single_run(
     # create the environment object.
     experiment.operators = simpy.Resource(env, capacity=experiment.n_operators)
 
-    # #########################################################################
-    # MODIFICATION: create the nurses resource
+    # create the nurses resource
     experiment.nurses = simpy.Resource(env, capacity=experiment.n_nurses)
-    # #########################################################################
 
     # we pass the experiment to the arrivals generator
     env.process(arrivals_generator(env, experiment))
 
-    # #########################################################################
-    # MODIFICATON: add warm-up period event
+    # add warm-up period event
     env.process(warmup_complete(wu_period, env, experiment))
 
     # run for warm-up + results collection period
     env.run(until=wu_period + rc_period)
-    # #########################################################################
 
     # end of run results: calculate mean waiting time
     run_results["01_mean_waiting_time"] = np.mean(experiment.results["waiting_times"])
@@ -73,8 +69,7 @@ def single_run(
         experiment.results["total_call_duration"] / (rc_period * experiment.n_operators)
     ) * 100.0
 
-    # #########################################################################
-    # MODIFICATION: summary results for nurse process
+    # summary results for nurse process
 
     # end of run results: nurse waiting time
     run_results["03_mean_nurse_waiting_time"] = np.mean(
@@ -86,8 +81,6 @@ def single_run(
         experiment.results["total_nurse_call_duration"]
         / (rc_period * experiment.n_nurses)
     ) * 100.0
-
-    # #########################################################################
 
     # return the results from the run of the model
     return run_results

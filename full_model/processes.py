@@ -34,7 +34,7 @@ def nurse_consultation(identifier, env, args):
         # sample nurse the duration of the nurse consultation
         nurse_call_duration = args.nurse_dist.sample()
         main_message = (
-            f"\n{Fore.dark_orange}{Back.grey_0}Nurse called back patient {Fore.white}{Back.black} {identifier} {Fore.dark_orange}{Back.grey_0} at "
+            f"\n{Fore.dark_orange}{Back.grey_0}Nurse called back patient {Fore.black}{Back.white} {identifier} {Fore.dark_orange}{Back.grey_0} at "
             + f"{env.now:.2f} - Active nurses: {active_nurses} - Remaining nurses: {remaining_nurses}{Style.reset}"
         )
 
@@ -55,8 +55,8 @@ def nurse_consultation(identifier, env, args):
         args.results["total_nurse_call_duration"] += nurse_call_duration
 
         trace(
-            f"\n{Fore.dark_orange}{Back.grey_0}Nurse consultation for {Fore.white}{Back.black} {identifier} {Fore.dark_orange}{Back.grey_0}"
-            + f" completed at {env.now:.2f} {Style.reset}",
+            f"\n{Fore.dark_orange}{Back.grey_0}Nurse consultation for {Fore.black}{Back.white} {identifier} {Fore.dark_orange}{Back.grey_0}"
+            + f" completed at {env.now:.2f} {Style.reset} - Nurse call duration: {nurse_call_duration:.2f}",
             enabled=trace_enabled,
         )
 
@@ -121,19 +121,22 @@ def service(identifier, env, args):
 
         # print out information for patient.
         trace(
-            f"\n{Fore.black}{Back.green}Call {Fore.white}{Back.black} {identifier} {Fore.black}{Back.green} ended at {env.now:.2f} - Duration was: {call_duration:.2f}{Style.reset}\n",
+            f"\n{Fore.black}{Back.green}Call {Fore.white}{Back.black} {identifier} {Fore.black}{Back.green} ended at {env.now:.2f} - Duration was: {call_duration:.2f}{Style.reset}",
             trace_enabled,
         )
 
-    # ##########################################################################
-    # MODIFICATION NURSE CALL BACK
+    # NURSE CALL BACK
     # does nurse need to call back?
     # Note the level of the indented code.
     callback_patient = args.callback_dist.sample()
 
     if callback_patient:
         env.process(nurse_consultation(identifier, env, args))
-    # ##########################################################################
+    else:
+        trace(
+            f"\n{Fore.yellow}{Back.blue}Patient {Fore.white}{Back.black} {identifier} {Fore.yellow}{Back.blue} didn't need nurse consultation.{Style.reset}",
+            trace_enabled,
+        )
 
 
 def arrivals_generator(env, args):
@@ -181,6 +184,6 @@ def warmup_complete(warm_up_period, env, args):
         The simulation experiment that contains the results being collected.
     """
     yield env.timeout(warm_up_period)
-    trace(f"{env.now:.2f}: Warm up complete.")
+    trace(f"\n\n{Fore.yellow}{Back.black}{env.now:.2f}: Warm up complete.{Style.reset}")
 
     args.init_results_variables()

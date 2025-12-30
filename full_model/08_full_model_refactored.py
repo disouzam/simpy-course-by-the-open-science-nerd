@@ -184,7 +184,7 @@ def _():
 def _(Experiment, multiple_replications):
     scenario = Experiment(n_nurses=15, nurse_call_high=30.0)
     results = multiple_replications(scenario, wu_period=50.0)
-    results.describe().round(1).T
+    print(results.describe().round(1).T)
     return
 
 
