@@ -13,10 +13,10 @@ machine_shop.items = [m1, m2]  # Pre-populate the machine shop
 
 def user(name, env, ms, size):
     machine = yield ms.get(lambda machine: machine.size == size)
-    print(name, "got", machine, "at", env.now)
+    print(f"{name} got {machine} at {env.now}")
     yield env.timeout(machine.duration)
     yield ms.put(machine)
-    print(name, "released", machine, "at", env.now)
+    print(f"{name} released {machine} at {env.now}")
 
 
 users = [env.process(user(i, env, machine_shop, (i % 2) + 1)) for i in range(3)]
