@@ -13,36 +13,41 @@ machine_shop.items = [m1, m2]  # Pre-populate the machine shop
 
 def user(name, env, ms, size):
     print(
-        f"\nBefore creating a get request for user {name}\n"
+        f"\nNow at: {env.now} - Before creating a get request for user {name}\n"
         + f"Get queue ({len(ms.get_queue)}): {ms.get_queue}\n"
-        + f"Put queue ({len(ms.put_queue)}): {ms.put_queue}"
+        + f"Put queue ({len(ms.put_queue)}): {ms.put_queue}\n"
+        + f"Machine shop items: {ms.items}"
     )
+
     machine = yield ms.get(lambda machine: machine.size == size)
 
-    print(f"\n{name} got {machine} at {env.now}")
+    print(f"\nNow at: {env.now} - {name} got {machine}")
 
     print(
-        f"\nBefore timeout for {machine} for user {name}\n"
+        f"\nNow at: {env.now} - Before timeout for {machine} for user {name}\n"
         + f"Get queue ({len(ms.get_queue)}): {ms.get_queue}\n"
-        + f"Put queue ({len(ms.put_queue)}): {ms.put_queue}"
+        + f"Put queue ({len(ms.put_queue)}): {ms.put_queue}\n"
+        + f"Machine shop items: {ms.items}"
     )
 
     yield env.timeout(machine.duration)
 
     print(
-        f"\nAfter timeout for {machine} for user {name}\n"
+        f"\nNow at: {env.now} - After timeout for {machine} for user {name}\n"
         + f"Get queue ({len(ms.get_queue)}): {ms.get_queue}\n"
-        + f"Put queue ({len(ms.put_queue)}): {ms.put_queue}"
+        + f"Put queue ({len(ms.put_queue)}): {ms.put_queue}\n"
+        + f"Machine shop items: {ms.items}"
     )
 
     yield ms.put(machine)
 
-    print(f"\n{name} released {machine} at {env.now}")
+    print(f"\nNow at: {env.now} - {name} released {machine}")
 
     print(
-        f"\nAfter machine {machine} with user {name} was released\n"
+        f"\nNow at: {env.now} - After machine {machine} with user {name} was released\n"
         + f"Get queue ({len(ms.get_queue)}): {ms.get_queue}\n"
-        + f"Put queue ({len(ms.put_queue)}): {ms.put_queue}"
+        + f"Put queue ({len(ms.put_queue)}): {ms.put_queue}\n"
+        + f"Machine shop items: {ms.items}"
     )
 
 
