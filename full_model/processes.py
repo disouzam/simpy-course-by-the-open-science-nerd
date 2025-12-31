@@ -93,12 +93,6 @@ def service(identifier, env, args):
         active_operators = args.operators.count
         remaining_operators = args.operators.capacity - active_operators
 
-        mem_address_of_req = hex(id(req))
-        if mem_address_of_req in args.operators_id:
-            raise Exception()
-
-        args.operators_id.add(mem_address_of_req)
-        trace(f"{len(args.operators_id)}: {args.operators_id}", trace_enabled)
         yield req
 
         # record the waiting time for call to be answered

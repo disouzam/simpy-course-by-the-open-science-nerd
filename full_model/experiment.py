@@ -35,8 +35,6 @@ class Experiment:
         """
         The init method sets up our defaults.
         """
-        self.operators_id = set()
-
         # sampling
         self.random_number_set = random_number_set
         self.n_streams = n_streams
@@ -118,8 +116,6 @@ class Experiment:
         collection.  This method is called at the start of each run
         of the model
         """
-        self.operators_id = set()
-
         # variable used to store results of experiment
         self.results = {}
         self.results["waiting_times"] = []

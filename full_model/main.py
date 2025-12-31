@@ -1,6 +1,7 @@
 # from callcentresim.model import Experiment, multiple_replications
-from full_model.execution import multiple_replications
-from full_model.experiment import Experiment
+from execution import multiple_replications
+
+from experiment import Experiment
 
 # experiment parameters
 
