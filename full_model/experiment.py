@@ -35,8 +35,6 @@ class Experiment:
         """
         The init method sets up our defaults.
         """
-        self.operators_id = set()
-
         # sampling
         self.random_number_set = random_number_set
         self.n_streams = n_streams
@@ -118,8 +116,6 @@ class Experiment:
         collection.  This method is called at the start of each run
         of the model
         """
-        self.operators_id = set()
-
         # variable used to store results of experiment
         self.results = {}
         self.results["waiting_times"] = []
@@ -130,3 +126,35 @@ class Experiment:
         # nurse sub process results collection
         self.results["nurse_waiting_times"] = []
         self.results["total_nurse_call_duration"] = 0.0
+
+
+def create_experiments(df_experiments):
+    """
+    Returns dictionary of Experiment objects based on contents of a dataframe
+
+    Params:
+    ------
+    df_experiments: pandas.DataFrame
+        Dataframe of experiments. First two columns are id, name followed by
+        variable names.  No fixed width
+
+    Returns:
+    --------
+    dict
+    """
+    experiments = {}
+
+    # experiment input parameter dictionary
+    exp_dict = df_experiments[df_experiments.columns[1:]].T.to_dict()
+    # names of experiments
+    exp_names = df_experiments[df_experiments.columns[0]].T.to_list()
+
+    print(exp_dict)
+    print(exp_names)
+
+    # loop through params and create Experiment objects.
+    for name, params in zip(exp_names, exp_dict.values()):
+        print(name)
+        experiments[name] = Experiment(**params)
+
+    return experiments
