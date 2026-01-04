@@ -9,3 +9,22 @@ from app_utility.file_io import read_file_contents
 
 st.title("A DES model of an Urgent care call centre")
 st.markdown(read_file_contents("./resources/model_info.md"))
+
+# no. resources
+n_operators = st.slider("Call Operators", 1, 20, 13, step=1)
+n_nurses = st.slider("Nurses", 1, 20, 9, step=1)
+
+# demand
+mean_iat = st.slider("IAT", 0.1, 1.0, 0.6, step=0.05)
+
+# patient routing
+chance_call_back = st.slider("Chance of nurse call back", 0.1, 1.0, 0.4, step=0.05)
+
+# set number of replications
+n_reps = st.number_input("No. replications", 100, 1_000, step=1)
+
+# set warm-up period
+warm_up_period = st.number_input("Warm-up period", 0, 1_000, step=1)
+results_collection_period = st.number_input(
+    "Data collection period", 1_000, 10_000, step=1
+)
