@@ -47,4 +47,4 @@ if st.button("Run simulation"):
         n_reps=n_reps,
     )
 
-    print(results.describe().round(2).T)
+    st.dataframe(results.describe().round(2).T)
