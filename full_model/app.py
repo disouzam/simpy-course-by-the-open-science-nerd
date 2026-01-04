@@ -43,12 +43,15 @@ if st.button("Run simulation"):
         chance_callback=chance_call_back,
     )
 
-    results = multiple_replications(
-        experiment=user_experiment,
-        wu_period=warm_up_period,
-        rc_period=results_collection_period,
-        n_reps=n_reps,
-    )
+    with st.spinner("Running urgent care call centre simulation..."):
+        results = multiple_replications(
+            experiment=user_experiment,
+            wu_period=warm_up_period,
+            rc_period=results_collection_period,
+            n_reps=n_reps,
+        )
+
+    st.success("Simulation complete.")
 
     st.dataframe(results.describe().round(2).T)
     fig = create_user_controlled_hist(results, name_mappings=get_kpi_name_mappings())
