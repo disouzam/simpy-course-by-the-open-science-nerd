@@ -8,6 +8,18 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true
+        },
+        {
+            "name": "Debug Streamlit app",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "-m",
+            "args": [
+                "streamlit",
+                "run",
+                "app.py"
+            ],
+            "cwd": "${workspaceFolder}/full_model"
         }
     ]
 }
