@@ -26,7 +26,7 @@ mean_iat = st.slider("IAT", 0.1, 1.0, 0.6, step=0.05)
 chance_call_back = st.slider("Chance of nurse call back", 0.1, 1.0, 0.4, step=0.05)
 
 # set number of replications
-n_reps = st.number_input("No. replications", 100, 1_000, step=1)
+n_reps = st.number_input("No. replications", 5, 1_000, 100, step=1)
 
 # set warm-up period
 warm_up_period = st.number_input("Warm-up period", 0, 1_000, step=1)
