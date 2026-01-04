@@ -11,5 +11,5 @@ def read_file_contents(file_name):
     -------
     str
     """
-    with open(file_name) as f:
+    with open(file_name, encoding="utf-8") as f:
         return f.read()
