@@ -6,6 +6,9 @@ This application implements a discrete event simulation of an urgent care call c
 
 import streamlit as st
 from app_utility.file_io import read_file_contents
+from execution import multiple_replications
+
+from experiment import Experiment
 
 st.title("A DES model of an Urgent care call centre")
 st.markdown(read_file_contents("./resources/model_info.md"))
@@ -28,3 +31,19 @@ warm_up_period = st.number_input("Warm-up period", 0, 1_000, step=1)
 results_collection_period = st.number_input(
     "Data collection period", 1_000, 10_000, step=1
 )
+
+user_experiment = Experiment(
+    n_operators=n_operators,
+    n_nurses=n_nurses,
+    mean_iat=mean_iat,
+    chance_callback=chance_call_back,
+)
+
+results = multiple_replications(
+    experiment=user_experiment,
+    wu_period=warm_up_period,
+    rc_period=results_collection_period,
+    n_reps=n_reps,
+)
+
+print(results.describe().round(2).T)
