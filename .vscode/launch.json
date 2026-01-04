@@ -17,7 +17,7 @@
             "args": [
                 "streamlit",
                 "run",
-                "app.py"
+                "Overview.py"
             ],
             "cwd": "${workspaceFolder}/full_model"
         }
