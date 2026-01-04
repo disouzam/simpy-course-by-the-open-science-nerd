@@ -2,7 +2,7 @@ import pandas as pd
 import streamlit as st
 from app_utility.file_io import read_file_contents
 from execution import run_all_experiments
-from output_analysis import create_example_csv
+from output_analysis import create_example_csv, experiment_summary_frame
 
 from experiment import create_experiments
 
@@ -39,3 +39,6 @@ if uploaded_file is not None:
             )
 
             st.success("Done")
+
+            df_results = experiment_summary_frame(results)
+            st.dataframe(df_results.round(2))
