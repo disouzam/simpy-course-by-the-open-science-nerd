@@ -6,6 +6,7 @@ This application implements a discrete event simulation of an urgent care call c
 
 import streamlit as st
 from app_utility.file_io import read_file_contents
+from app_utility.results import get_kpi_name_mappings
 from execution import multiple_replications
 from output_analysis import create_user_controlled_hist
 
@@ -49,5 +50,5 @@ if st.button("Run simulation"):
     )
 
     st.dataframe(results.describe().round(2).T)
-    fig = create_user_controlled_hist(results)
+    fig = create_user_controlled_hist(results, name_mappings=get_kpi_name_mappings())
     st.plotly_chart(fig)
