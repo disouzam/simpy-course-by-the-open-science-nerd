@@ -32,18 +32,19 @@ results_collection_period = st.number_input(
     "Data collection period", 1_000, 10_000, step=1
 )
 
-user_experiment = Experiment(
-    n_operators=n_operators,
-    n_nurses=n_nurses,
-    mean_iat=mean_iat,
-    chance_callback=chance_call_back,
-)
+if st.button("Run simulation"):
+    user_experiment = Experiment(
+        n_operators=n_operators,
+        n_nurses=n_nurses,
+        mean_iat=mean_iat,
+        chance_callback=chance_call_back,
+    )
 
-results = multiple_replications(
-    experiment=user_experiment,
-    wu_period=warm_up_period,
-    rc_period=results_collection_period,
-    n_reps=n_reps,
-)
+    results = multiple_replications(
+        experiment=user_experiment,
+        wu_period=warm_up_period,
+        rc_period=results_collection_period,
+        n_reps=n_reps,
+    )
 
-print(results.describe().round(2).T)
+    print(results.describe().round(2).T)
