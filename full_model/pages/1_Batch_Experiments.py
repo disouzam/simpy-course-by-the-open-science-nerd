@@ -1,7 +1,10 @@
 import pandas as pd
 import streamlit as st
 from app_utility.file_io import read_file_contents
+from execution import run_all_experiments
 from output_analysis import create_example_csv
+
+from experiment import create_experiments
 
 INFO_1 = "**Execute multiple experiments in a batch**"
 INFO_2 = "### Upload a CSV containing input parameters"
@@ -21,3 +24,18 @@ if uploaded_file is not None:
     df_experiments = pd.read_csv(uploaded_file)
     st.write("Loaded Experiments")
     st.table(df_experiments)
+
+    n_reps = st.slider("Replications", 3, 30, 5, step=1)
+    warm_up_period = st.number_input("Warm-up period", 0, 1_000, step=1)
+    results_collection_period = st.number_input(
+        "Data collection period", 1_000, 10_000, step=1
+    )
+
+    if st.button("Execute Experiments"):
+        experiments = create_experiments(df_experiments)
+        with st.spinner("Running all experiments"):
+            results = run_all_experiments(
+                experiments, warm_up_period, results_collection_period, n_reps
+            )
+
+            st.success("Done")
