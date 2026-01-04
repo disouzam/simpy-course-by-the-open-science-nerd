@@ -12,6 +12,10 @@ from output_analysis import create_user_controlled_hist
 
 from experiment import Experiment
 
+st.set_page_config(
+    page_title="Urgent Care Sim App", layout="wide", initial_sidebar_state="expanded"
+)
+
 st.title("A DES model of an Urgent care call centre")
 st.markdown(read_file_contents("./resources/model_info.md"))
 
