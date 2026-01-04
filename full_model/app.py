@@ -53,6 +53,13 @@ if st.button("Run simulation"):
 
     st.success("Simulation complete.")
 
-    st.dataframe(results.describe().round(2).T)
-    fig = create_user_controlled_hist(results, name_mappings=get_kpi_name_mappings())
-    st.plotly_chart(fig)
+    col1, col2 = st.columns(2)
+
+    with col1.expander("Tabular results", expanded=True):
+        st.dataframe(results.describe().round(2).T)
+
+    with col2.expander("Histogram", expanded=True):
+        fig = create_user_controlled_hist(
+            results, name_mappings=get_kpi_name_mappings()
+        )
+        st.plotly_chart(fig)
