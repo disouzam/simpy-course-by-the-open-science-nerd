@@ -30,6 +30,18 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
+    ## A single arrival generator function
+
+    We can write less code by modifying the `Experiment` class to use `dict` to store the distributions and by creating a generator function that accepts parameters.
+
+    The code is more flexible, at the cost of readability (and potential to make more mistakes) for some less experienced coders.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
     # 1. Imports
     """)
     return
@@ -190,6 +202,9 @@ def _(
             self.iat_wrist = iat_wrist
             self.iat_ankle = iat_ankle
 
+            # we will store all code in distributions
+            self.dists = {}
+
             # initialise results to zero
             self.init_results_variables()
 
@@ -220,15 +235,15 @@ def _(
             # create distributions
 
             # inter-arrival time distributions
-            self.arrival_shoulder = Exponential(
+            self.dists["shoulder"] = Exponential(
                 self.iat_shoulder, random_seed=self.seeds[0]
             )
 
-            self.arrival_hip = Exponential(self.iat_hip, random_seed=self.seeds[0])
+            self.dists["hip"] = Exponential(self.iat_hip, random_seed=self.seeds[1])
 
-            self.arrival_wrist = Exponential(self.iat_wrist, random_seed=self.seeds[0])
+            self.dists["wrist"] = Exponential(self.iat_wrist, random_seed=self.seeds[2])
 
-            self.arrival_ankle = Exponential(self.iat_ankle, random_seed=self.seeds[0])
+            self.dists["ankle"] = Exponential(self.iat_ankle, random_seed=self.seeds[3])
 
         def init_results_variables(self):
             """
