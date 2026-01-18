@@ -1193,14 +1193,14 @@ files = [
 
 [[package]]
 name = "marimo"
-version = "0.18.4"
+version = "0.19.4"
 description = "A library for making reactive notebooks and apps"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "marimo-0.18.4-py3-none-any.whl", hash = "sha256:7c1d72f37e9662e8811eff801f6c85451af685fe1cbd22c49a85e7b1f57aebec"},
-    {file = "marimo-0.18.4.tar.gz", hash = "sha256:30b5d8cd8f3e9054b5f7332bf0f4d11cb608712995e4f4feed7337d118eef8ab"},
+    {file = "marimo-0.19.4-py3-none-any.whl", hash = "sha256:872f3427213047076e73147c41085b6932d83a03ac84040ba9a611a0fcecb729"},
+    {file = "marimo-0.19.4.tar.gz", hash = "sha256:eec3b765c3fd98d63e2017c56a024e779a6923cb56e7682e78876d4fe49409b7"},
 ]
 
 [package.dependencies]
@@ -1216,17 +1216,17 @@ packaging = "*"
 psutil = ">=5.0"
 pygments = ">=2.19,<3"
 pymdown-extensions = ">=10.15,<11"
-pyyaml = ">=6.0"
-starlette = ">=0.35.0,<0.36.0 || >0.36.0"
+pyyaml = ">=6.0.1"
+starlette = ">=0.37.2"
 tomlkit = ">=0.12.0"
 uvicorn = ">=0.22.0"
 websockets = ">=14.2.0"
 
 [package.extras]
-dev = ["black (>=23.12.1,<23.13.0)", "click (>=8.0,<9)", "duckdb (>=1.0.0)", "openai (>=1.55.3)", "opentelemetry-api (>=1.26.0,<1.27.0)", "opentelemetry-sdk (>=1.26.0,<1.27.0)", "ruff (>=0.13.2)", "sqlglot[rs] (>=26.2.0)"]
 lsp = ["python-lsp-ruff (>=2.0.0)", "python-lsp-server (>=1.13.0)"]
-mcp = ["mcp (>=1.0.0) ; python_full_version >= \"3.10.0\"", "pydantic (>2) ; python_full_version >= \"3.10.0\""]
-recommended = ["altair (>=5.4.0)", "duckdb (>=1.0.0)", "google-genai (>=1.20.0)", "nbformat (>=5.7.0)", "openai (>=1.55.3)", "polars[pyarrow] (>=1.9.0)", "ruff", "sqlglot[rs] (>=26.2.0)"]
+mcp = ["mcp (>=1.0.0)", "pydantic (>2)"]
+recommended = ["altair (>=5.4.0)", "marimo[sandbox]", "marimo[sql]", "nbformat (>=5.7.0)", "pydantic-ai-slim[openai] (>=1.39.0)", "ruff"]
+sandbox = ["pyzmq (>=27.1.0)", "uv (>=0.9.21)"]
 sql = ["duckdb (>=1.0.0)", "polars[pyarrow] (>=1.9.0)", "sqlglot[rs] (>=26.2.0)"]
 
 [[package]]
@@ -2989,4 +2989,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13"
-content-hash = "6e0c2639aa049b740bedcdce5939c1feb1d3afd6e6db6e60b4a27a460d7ca914"
+content-hash = "29011f136682d2fa3943bce55aea9d0ccd82289c57d32a35d65aec6424763ad6"
