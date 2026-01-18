@@ -294,11 +294,18 @@ def patient_pathway(patient_id, trace_enabled, env, args):
         wait_for_acute = acute_admit_time - arrival_time
         args.results["waiting_acute"].append(wait_for_acute)
 
-        trace(
-            f"{env.now:.2f}: Patient {patient_id} admitted to acute ward."
-            + f"(waited {wait_for_acute:.2f} days)",
-            trace_enabled,
-        )
+        if wait_for_acute < 0.01:
+            trace(
+                f"{env.now:.2f}: Patient {patient_id} admitted to acute ward."
+                + "(IMMEDIATE ADMISSION)",
+                trace_enabled,
+            )
+        else:
+            trace(
+                f"{env.now:.2f}: Patient {patient_id} admitted to acute ward."
+                + f"(waited {wait_for_acute:.2f} days)",
+                trace_enabled,
+            )
 
         # Simulate acute care treatment
         acute_care_duration = args.acute_los.sample()
@@ -323,11 +330,18 @@ def patient_pathway(patient_id, trace_enabled, env, args):
         bed_blocking_duration = transfer_time - medically_ready_time
         args.results["bed_blocking_times"].append(bed_blocking_duration)
 
-        trace(
-            f"{env.now:.2f}: Patient {patient_id} transferred to rehab. "
-            + f"(blocked acute bed for {bed_blocking_duration:.2f} days)",
-            trace_enabled,
-        )
+        if bed_blocking_duration < 0.01:
+            trace(
+                f"{env.now:.2f}: Patient {patient_id} transferred to rehab. "
+                + "(IMMEDIATE TRANSFERENCE TO REHAB. No blocking of acute bed)",
+                trace_enabled,
+            )
+        else:
+            trace(
+                f"{env.now:.2f}: Patient {patient_id} transferred to rehab. "
+                + f"(blocked acute bed for {bed_blocking_duration:.2f} days)",
+                trace_enabled,
+            )
 
     # Acute bed is now released
     # Note the indentation!  We are now outside of the with context manager.
@@ -382,7 +396,10 @@ def _(itertools):
 
             args.results["n_arrivals"] = patient_id
 
-            trace(f"{env.now:.2f}: Stroke arrival.", trace_enabled)
+            trace(
+                f"{env.now:.2f}: Patient {patient_id} with stroke arrived.",
+                trace_enabled,
+            )
 
             # patient enters pathway
             env.process(patient_pathway(patient_id, trace_enabled, env, args))
@@ -456,7 +473,7 @@ def _(RUN_LENGTH, np, simpy, stroke_arrivals_generator):
 def _(Experiment, single_run):
     experiment = Experiment()
     results = single_run(experiment, trace_enabled=True)
-    results
+    print(f"\n{results}")
     return
 
 
