@@ -247,7 +247,194 @@ def _(
             self.results["n_wrists"] = 0
             self.results["n_ankles"] = 0
 
+    return (Experiment,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## 5. A function per arrival source
+
+    The first approach we will use is creating an arrival generator per source.  There will be some code redundancy, but it will a clear design for others to understand.
+    """)
     return
+
+
+@app.cell
+def _(itertools, trace):
+    def shoulder_arrivals_generator(env, args):
+        """
+        Arrival process for shoulders.
+
+        Parameters:
+        ------
+        env: simpy.Environment
+            The simpy environment for the simulation
+
+        args: Experiment
+            The settings and input parameters for the simulation.
+        """
+        # use itertools as it provides an infinite loop
+        # with a counter variable that we can use for unique Ids
+        for patient_count in itertools.count(start=1):
+            # the sample distribution is defined by the experiment.
+            inter_arrival_time = args.arrival_shoulder.sample()
+            yield env.timeout(inter_arrival_time)
+
+            args.results["n_shoulders"] = patient_count
+
+            trace(f"{env.now:.2f}: SHOULDER arrival.")
+
+    return (shoulder_arrivals_generator,)
+
+
+@app.cell
+def _(itertools, trace):
+    def hip_arrivals_generator(env, args):
+        """
+        Arrival process for hips.
+
+        Parameters:
+        ------
+        env: simpy.Environment
+            The simpy environment for the simulation
+
+        args: Experiment
+            The settings and input parameters for the simulation.
+        """
+        # use itertools as it provides an infinite loop
+        # with a counter variable that we can use for unique Ids
+        for patient_count in itertools.count(start=1):
+            # the sample distribution is defined by the experiment.
+            inter_arrival_time = args.arrival_hip.sample()
+            yield env.timeout(inter_arrival_time)
+
+            args.results["n_hips"] = patient_count
+            trace(f"{env.now:.2f}: HIP arrival.")
+
+    return (hip_arrivals_generator,)
+
+
+@app.cell
+def _(itertools, trace):
+    def wrist_arrivals_generator(env, args):
+        """
+        Arrival process for wrists.
+
+        Parameters:
+        ------
+        env: simpy.Environment
+            The simpy environment for the simulation
+
+        args: Experiment
+            The settings and input parameters for the simulation.
+        """
+        # use itertools as it provides an infinite loop
+        # with a counter variable that we can use for unique Ids
+        for patient_count in itertools.count(start=1):
+            # the sample distribution is defined by the experiment.
+            inter_arrival_time = args.arrival_wrist.sample()
+            yield env.timeout(inter_arrival_time)
+
+            args.results["n_wrists"] = patient_count
+            trace(f"{env.now:.2f}: WRIST arrival.")
+
+    return (wrist_arrivals_generator,)
+
+
+@app.cell
+def _(itertools, trace):
+    def ankle_arrivals_generator(env, args):
+        """
+        Arrival process for ankles.
+
+        Parameters:
+        ------
+        env: simpy.Environment
+            The simpy environment for the simulation
+
+        args: Experiment
+            The settings and input parameters for the simulation.
+        """
+        # use itertools as it provides an infinite loop
+        # with a counter variable that we can use for unique Ids
+        for patient_count in itertools.count(start=1):
+            # the sample distribution is defined by the experiment.
+            inter_arrival_time = args.arrival_wrist.sample()
+            yield env.timeout(inter_arrival_time)
+
+            args.results["n_ankles"] = patient_count
+            trace(f"{env.now:.2f}: ANKLE arrival.")
+
+    return (ankle_arrivals_generator,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    # 6. Single run function
+    """)
+    return
+
+
+@app.cell
+def _(
+    RUN_LENGTH,
+    ankle_arrivals_generator,
+    hip_arrivals_generator,
+    shoulder_arrivals_generator,
+    simpy,
+    wrist_arrivals_generator,
+):
+    def single_run(experiment, rep=0, run_length=RUN_LENGTH):
+        """
+        Perform a single run of the model and return the results
+
+        Parameters:
+        -----------
+
+        experiment: Experiment
+            The experiment/paramaters to use with model
+
+        rep: int
+            The replication number.
+
+        rc_period: float, optional (default=RUN_LENGTH)
+            The run length of the model
+        """
+
+        # reset all results variables to zero and empty
+        experiment.init_results_variables()
+
+        # set random number set to the replication no.
+        # this controls sampling for the run.
+        experiment.set_random_no_set(rep)
+
+        # environment is (re)created inside single run
+        env = simpy.Environment()
+
+        # we pass all arrival generators to simpy
+        env.process(shoulder_arrivals_generator(env, experiment))
+        env.process(hip_arrivals_generator(env, experiment))
+        env.process(wrist_arrivals_generator(env, experiment))
+        env.process(ankle_arrivals_generator(env, experiment))
+
+        # run for warm-up + results collection period
+        env.run(until=run_length)
+
+        # return the count of the arrivals
+        return experiment.results
+
+    return (single_run,)
+
+
+@app.cell
+def _(Experiment, single_run):
+    TRACE = True
+    experiment = Experiment()
+    results = single_run(experiment)
+    results
+    return (TRACE,)
 
 
 if __name__ == "__main__":
