@@ -264,23 +264,25 @@ def _(
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## 5. A function per arrival source
-
-    The first approach we will use is creating an arrival generator per source.  There will be some code redundancy, but it will a clear design for others to understand.
+    # 5.1 Single arrival generator
     """)
     return
 
 
 @app.cell
 def _(itertools):
-    def shoulder_arrivals_generator(env, trace_enabled, args):
+    def trauma_generator(env, trace_enabled, trauma_type, args):
         """
-        Arrival process for shoulders.
+        Modified generator for arrivals.
+        Now works across all trauma types.
 
         Parameters:
         ------
         env: simpy.Environment
             The simpy environment for the simulation
+
+        trauma_type: str
+            string representing the type of patient e.g. "shoulder"
 
         args: Experiment
             The settings and input parameters for the simulation.
@@ -289,95 +291,16 @@ def _(itertools):
         # with a counter variable that we can use for unique Ids
         for patient_count in itertools.count(start=1):
             # the sample distribution is defined by the experiment.
-            inter_arrival_time = args.arrival_shoulder.sample()
+            inter_arrival_time = args.dists[trauma_type].sample()
             yield env.timeout(inter_arrival_time)
 
-            args.results["n_shoulders"] = patient_count
+            args.results[f"n_{trauma_type}s"] = patient_count
+            trace(
+                f"{env.now:.2f}: {trauma_type.upper()} arrival.",
+                trace_enabled=trace_enabled,
+            )
 
-            trace(f"{env.now:.2f}: SHOULDER arrival.", trace_enabled)
-
-    return (shoulder_arrivals_generator,)
-
-
-@app.cell
-def _(itertools):
-    def hip_arrivals_generator(env, trace_enabled, args):
-        """
-        Arrival process for hips.
-
-        Parameters:
-        ------
-        env: simpy.Environment
-            The simpy environment for the simulation
-
-        args: Experiment
-            The settings and input parameters for the simulation.
-        """
-        # use itertools as it provides an infinite loop
-        # with a counter variable that we can use for unique Ids
-        for patient_count in itertools.count(start=1):
-            # the sample distribution is defined by the experiment.
-            inter_arrival_time = args.arrival_hip.sample()
-            yield env.timeout(inter_arrival_time)
-
-            args.results["n_hips"] = patient_count
-            trace(f"{env.now:.2f}: HIP arrival.", trace_enabled=trace_enabled)
-
-    return (hip_arrivals_generator,)
-
-
-@app.cell
-def _(itertools):
-    def wrist_arrivals_generator(env, trace_enabled, args):
-        """
-        Arrival process for wrists.
-
-        Parameters:
-        ------
-        env: simpy.Environment
-            The simpy environment for the simulation
-
-        args: Experiment
-            The settings and input parameters for the simulation.
-        """
-        # use itertools as it provides an infinite loop
-        # with a counter variable that we can use for unique Ids
-        for patient_count in itertools.count(start=1):
-            # the sample distribution is defined by the experiment.
-            inter_arrival_time = args.arrival_wrist.sample()
-            yield env.timeout(inter_arrival_time)
-
-            args.results["n_wrists"] = patient_count
-            trace(f"{env.now:.2f}: WRIST arrival.", trace_enabled=trace_enabled)
-
-    return (wrist_arrivals_generator,)
-
-
-@app.cell
-def _(itertools):
-    def ankle_arrivals_generator(env, trace_enabled, args):
-        """
-        Arrival process for ankles.
-
-        Parameters:
-        ------
-        env: simpy.Environment
-            The simpy environment for the simulation
-
-        args: Experiment
-            The settings and input parameters for the simulation.
-        """
-        # use itertools as it provides an infinite loop
-        # with a counter variable that we can use for unique Ids
-        for patient_count in itertools.count(start=1):
-            # the sample distribution is defined by the experiment.
-            inter_arrival_time = args.arrival_wrist.sample()
-            yield env.timeout(inter_arrival_time)
-
-            args.results["n_ankles"] = patient_count
-            trace(f"{env.now:.2f}: ANKLE arrival.", trace_enabled=trace_enabled)
-
-    return (ankle_arrivals_generator,)
+    return (trauma_generator,)
 
 
 @app.cell(hide_code=True)
@@ -389,14 +312,7 @@ def _(mo):
 
 
 @app.cell
-def _(
-    RUN_LENGTH,
-    ankle_arrivals_generator,
-    hip_arrivals_generator,
-    shoulder_arrivals_generator,
-    simpy,
-    wrist_arrivals_generator,
-):
+def _(RUN_LENGTH, simpy, trauma_generator):
     def single_run(experiment, rep=0, run_length=RUN_LENGTH, trace_enabled=False):
         """
         Perform a single run of the model and return the results
@@ -425,10 +341,8 @@ def _(
         env = simpy.Environment()
 
         # we pass all arrival generators to simpy
-        env.process(shoulder_arrivals_generator(env, trace_enabled, experiment))
-        env.process(hip_arrivals_generator(env, trace_enabled, experiment))
-        env.process(wrist_arrivals_generator(env, trace_enabled, experiment))
-        env.process(ankle_arrivals_generator(env, trace_enabled, experiment))
+        for trauma_type in experiment.dists.keys():
+            env.process(trauma_generator(env, trace_enabled, trauma_type, experiment))
 
         # run for warm-up + results collection period
         env.run(until=run_length)
@@ -459,7 +373,7 @@ def _(mo):
 def _(Experiment, single_run):
     M = 1_000_000
     experiment_2 = Experiment(iat_shoulder=M, iat_wrist=M, iat_ankle=M)
-    results_2 = single_run(experiment_2)
+    results_2 = single_run(experiment_2, trace_enabled=True)
     results_2
     return
 
