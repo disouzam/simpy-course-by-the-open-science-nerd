@@ -99,9 +99,6 @@ def _():
     N_STREAMS = 3
     DEFAULT_RND_SET = 0
 
-    # Boolean switch to simulation results as the model runs
-    TRACE = False
-
     # run variables (units = days)
     RUN_LENGTH = 100
     return (
@@ -115,7 +112,6 @@ def _():
         REHAB_LOC_STD,
         REHAB_LOS_MEAN,
         RUN_LENGTH,
-        TRACE,
     )
 
 
@@ -127,21 +123,18 @@ def _(mo):
     return
 
 
-@app.cell
-def _(TRACE):
-    def trace(msg):
-        """
-        Turing printing of events on and off.
+@app.function
+def trace(msg, trace_enabled: False):
+    """
+    Turing printing of events on and off.
 
-        Params:
-        -------
-        msg: str
-            string to print to screen.
-        """
-        if TRACE:
-            print(msg)
-
-    return (trace,)
+    Params:
+    -------
+    msg: str
+        string to print to screen.
+    """
+    if trace_enabled:
+        print(msg)
 
 
 @app.cell(hide_code=True)
@@ -276,79 +269,84 @@ def _(mo):
     return
 
 
-@app.cell
-def _(trace):
-    def patient_pathway(patient_id, env, args):
-        """Process a patient through the acute ward and rehab unit.
-        Simpy generator function.
+@app.function
+def patient_pathway(patient_id, trace_enabled, env, args):
+    """Process a patient through the acute ward and rehab unit.
+    Simpy generator function.
 
-        Parameters:
-        -----------
-        patient_id: int
-            A unique id representing the patient in the process
+    Parameters:
+    -----------
+    patient_id: int
+        A unique id representing the patient in the process
 
-        env: simpy.Environment
-            The simulation environment
+    env: simpy.Environment
+        The simulation environment
 
-        args: Experiment
-            Container class for the simulation parameters/results.
-        """
-        arrival_time = env.now
+    args: Experiment
+        Container class for the simulation parameters/results.
+    """
+    arrival_time = env.now
 
-        with args.acute_ward.request() as acute_bed_request:
-            yield acute_bed_request
+    with args.acute_ward.request() as acute_bed_request:
+        yield acute_bed_request
 
-            acute_admit_time = env.now
-            wait_for_acute = acute_admit_time - arrival_time
-            args.results["waiting_acute"].append(wait_for_acute)
+        acute_admit_time = env.now
+        wait_for_acute = acute_admit_time - arrival_time
+        args.results["waiting_acute"].append(wait_for_acute)
 
-            trace(
-                f"{env.now:.2f}: Patient {patient_id} admitted to acute ward."
-                + f"(waited {wait_for_acute:.2f} days)"
-            )
+        trace(
+            f"{env.now:.2f}: Patient {patient_id} admitted to acute ward."
+            + f"(waited {wait_for_acute:.2f} days)",
+            trace_enabled,
+        )
 
-            # Simulate acute care treatment
-            acute_care_duration = args.acute_los.sample()
-            yield env.timeout(acute_care_duration)
+        # Simulate acute care treatment
+        acute_care_duration = args.acute_los.sample()
+        yield env.timeout(acute_care_duration)
 
-            # Patient is now medically ready for rehabilitation
-            medically_ready_time = env.now
-            trace(f"{env.now:.2f}: Patient {patient_id} medically ready for rehab")
+        # Patient is now medically ready for rehabilitation
+        medically_ready_time = env.now
+        trace(
+            f"{env.now:.2f}: Patient {patient_id} medically ready for rehab",
+            trace_enabled,
+        )
 
-            # Request a rehab bed but don't release the acute bed immediately
-            # Note we are still within the "with" context manager for the acute bed
-            # This is where bed blocking occurs. We wait here until the rehab bed
-            # is available. Make sure the indentation is correct or you will release
-            rehab_bed = args.rehab_unit.request()
-            yield rehab_bed
+        # Request a rehab bed but don't release the acute bed immediately
+        # Note we are still within the "with" context manager for the acute bed
+        # This is where bed blocking occurs. We wait here until the rehab bed
+        # is available. Make sure the indentation is correct or you will release
+        rehab_bed = args.rehab_unit.request()
+        yield rehab_bed
 
-            # Now we have a rehab bed, we can transfer the patient
-            transfer_time = env.now
-            bed_blocking_duration = transfer_time - medically_ready_time
-            args.results["bed_blocking_times"].append(bed_blocking_duration)
+        # Now we have a rehab bed, we can transfer the patient
+        transfer_time = env.now
+        bed_blocking_duration = transfer_time - medically_ready_time
+        args.results["bed_blocking_times"].append(bed_blocking_duration)
 
-            trace(
-                f"{env.now:.2f}: Patient {patient_id} transferred to rehab. "
-                + f"(blocked acute bed for {bed_blocking_duration:.2f} days)"
-            )
+        trace(
+            f"{env.now:.2f}: Patient {patient_id} transferred to rehab. "
+            + f"(blocked acute bed for {bed_blocking_duration:.2f} days)",
+            trace_enabled,
+        )
 
-        # Acute bed is now released
-        # Note the indentation!  We are now outside of the with context manager.
-        # This automatically releases the simpy resource.
+    # Acute bed is now released
+    # Note the indentation!  We are now outside of the with context manager.
+    # This automatically releases the simpy resource.
 
-        # Simulate rehabilitation stay
-        rehab_duration = args.rehab_los.sample()
-        yield env.timeout(rehab_duration)
+    # Simulate rehabilitation stay
+    rehab_duration = args.rehab_los.sample()
+    yield env.timeout(rehab_duration)
 
-        # Patient completes rehabilitation and is discharged
-        discharge_time = env.now
+    # Patient completes rehabilitation and is discharged
+    discharge_time = env.now
 
-        # Note: we need to explicitly call release on the rehab resource.
-        args.rehab_unit.release(rehab_bed)
+    # Note: we need to explicitly call release on the rehab resource.
+    args.rehab_unit.release(rehab_bed)
 
-        trace(f"{env.now:.2f}: Patient {patient_id} discharged from Rehab.")
-
-    return (patient_pathway,)
+    trace(
+        f"{discharge_time:.2f}: Patient {patient_id} discharged from Rehab.",
+        trace_enabled,
+    )
 
 
 @app.cell(hide_code=True)
@@ -362,8 +360,8 @@ def _(mo):
 
 
 @app.cell
-def _(itertools, patient_pathway, trace):
-    def stroke_arrivals_generator(env, args):
+def _(itertools):
+    def stroke_arrivals_generator(env, trace_enabled, args):
         """
         Arrival process for strokes.
 
@@ -384,10 +382,10 @@ def _(itertools, patient_pathway, trace):
 
             args.results["n_arrivals"] = patient_id
 
-            trace(f"{env.now:.2f}: Stroke arrival.")
+            trace(f"{env.now:.2f}: Stroke arrival.", trace_enabled)
 
             # patient enters pathway
-            env.process(patient_pathway(patient_id, env, args))
+            env.process(patient_pathway(patient_id, trace_enabled, env, args))
 
     return (stroke_arrivals_generator,)
 
@@ -402,7 +400,7 @@ def _(mo):
 
 @app.cell
 def _(RUN_LENGTH, np, simpy, stroke_arrivals_generator):
-    def single_run(experiment, rep=0, run_length=RUN_LENGTH):
+    def single_run(experiment, rep=0, run_length=RUN_LENGTH, trace_enabled=False):
         """
         Perform a single run of the model and return the results
 
@@ -434,7 +432,7 @@ def _(RUN_LENGTH, np, simpy, stroke_arrivals_generator):
         experiment.rehab_unit = simpy.Resource(env, experiment.n_rehab_beds)
 
         # we pass all arrival generators to simpy
-        env.process(stroke_arrivals_generator(env, experiment))
+        env.process(stroke_arrivals_generator(env, trace_enabled, experiment))
 
         # run model
         env.run(until=run_length)
@@ -456,11 +454,10 @@ def _(RUN_LENGTH, np, simpy, stroke_arrivals_generator):
 
 @app.cell
 def _(Experiment, single_run):
-    TRACE = True
     experiment = Experiment()
-    results = single_run(experiment)
+    results = single_run(experiment, trace_enabled=True)
     results
-    return (TRACE,)
+    return
 
 
 if __name__ == "__main__":
