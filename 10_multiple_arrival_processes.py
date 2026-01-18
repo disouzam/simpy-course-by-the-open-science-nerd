@@ -14,6 +14,22 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
+    # Notice of authorship
+
+    Most content in this notebook has been copied / typed based on corresponding code written / made available by Tom Monks (The Open Science Nerd)
+
+    **Repository**: https://github.com/pythonhealthdatascience/intro-open-sim
+
+    **YouTube channel**: https://www.youtube.com/@TheOpenScienceNerd
+
+    **Simpy short course**: https://youtube.com/playlist?list=PLrOeiVQ0eMwF6qE5RLs2brgxBfVUy3MO3&si=ZTorhOyZsbi8XftM
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
     # 1. Imports
     """)
     return
