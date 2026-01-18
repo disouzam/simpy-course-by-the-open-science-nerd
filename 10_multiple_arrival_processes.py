@@ -432,5 +432,22 @@ def _(Experiment, single_run):
     return
 
 
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    # A hospital that only provides surgery for hip fractures
+    """)
+    return
+
+
+@app.cell
+def _(Experiment, single_run):
+    M = 1_000_000
+    experiment_2 = Experiment(iat_shoulder=M, iat_wrist=M, iat_ankle=M)
+    results_2 = single_run(experiment_2)
+    results_2
+    return
+
+
 if __name__ == "__main__":
     app.run()
