@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.18.4"
+__generated_with = "0.19.4"
 app = marimo.App(width="full")
 
 
@@ -66,7 +66,7 @@ def _():
     TRACE = False
 
     # run variables (units = hours)
-    RUN_LENGHT = 24 * 10
+    RUN_LENGTH = 24 * 10
     return (
         DEFAULT_RND_SET,
         IAT_ANKLE,
@@ -74,6 +74,7 @@ def _():
         IAT_SHOULDER,
         IAT_WRIST,
         N_STREAMS,
+        RUN_LENGTH,
         TRACE,
     )
 
@@ -143,7 +144,7 @@ def _(TRACE):
         if TRACE:
             print(msg)
 
-    return
+    return (trace,)
 
 
 @app.cell(hide_code=True)
