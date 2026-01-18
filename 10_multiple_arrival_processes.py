@@ -37,9 +37,12 @@ def _(mo):
 
 @app.cell
 def _():
-    import numpy as np
+    import itertools
 
-    return (np,)
+    import numpy as np
+    import simpy
+
+    return itertools, np, simpy
 
 
 @app.cell(hide_code=True)
@@ -62,9 +65,6 @@ def _():
     N_STREAMS = 4
     DEFAULT_RND_SET = 0
 
-    # Boolean switch to display simulation results as the model runs
-    TRACE = False
-
     # run variables (units = hours)
     RUN_LENGTH = 24 * 10
     return (
@@ -75,7 +75,6 @@ def _():
         IAT_WRIST,
         N_STREAMS,
         RUN_LENGTH,
-        TRACE,
     )
 
 
@@ -130,21 +129,18 @@ def _(np):
     return (Exponential,)
 
 
-@app.cell
-def _(TRACE):
-    def trace(msg):
-        """
-        Turing printing of events on and off.
+@app.function
+def trace(msg, trace_enabled: False):
+    """
+    Turing printing of events on and off.
 
-        Params:
-        -------
-        msg: str
-            string to print to screen.
-        """
-        if TRACE:
-            print(msg)
-
-    return (trace,)
+    Params:
+    -------
+    msg: str
+        string to print to screen.
+    """
+    if trace_enabled:
+        print(msg)
 
 
 @app.cell(hide_code=True)
@@ -261,8 +257,8 @@ def _(mo):
 
 
 @app.cell
-def _(itertools, trace):
-    def shoulder_arrivals_generator(env, args):
+def _(itertools):
+    def shoulder_arrivals_generator(env, trace_enabled, args):
         """
         Arrival process for shoulders.
 
@@ -283,14 +279,14 @@ def _(itertools, trace):
 
             args.results["n_shoulders"] = patient_count
 
-            trace(f"{env.now:.2f}: SHOULDER arrival.")
+            trace(f"{env.now:.2f}: SHOULDER arrival.", trace_enabled)
 
     return (shoulder_arrivals_generator,)
 
 
 @app.cell
-def _(itertools, trace):
-    def hip_arrivals_generator(env, args):
+def _(itertools):
+    def hip_arrivals_generator(env, trace_enabled, args):
         """
         Arrival process for hips.
 
@@ -310,14 +306,14 @@ def _(itertools, trace):
             yield env.timeout(inter_arrival_time)
 
             args.results["n_hips"] = patient_count
-            trace(f"{env.now:.2f}: HIP arrival.")
+            trace(f"{env.now:.2f}: HIP arrival.", trace_enabled=trace_enabled)
 
     return (hip_arrivals_generator,)
 
 
 @app.cell
-def _(itertools, trace):
-    def wrist_arrivals_generator(env, args):
+def _(itertools):
+    def wrist_arrivals_generator(env, trace_enabled, args):
         """
         Arrival process for wrists.
 
@@ -337,14 +333,14 @@ def _(itertools, trace):
             yield env.timeout(inter_arrival_time)
 
             args.results["n_wrists"] = patient_count
-            trace(f"{env.now:.2f}: WRIST arrival.")
+            trace(f"{env.now:.2f}: WRIST arrival.", trace_enabled=trace_enabled)
 
     return (wrist_arrivals_generator,)
 
 
 @app.cell
-def _(itertools, trace):
-    def ankle_arrivals_generator(env, args):
+def _(itertools):
+    def ankle_arrivals_generator(env, trace_enabled, args):
         """
         Arrival process for ankles.
 
@@ -364,7 +360,7 @@ def _(itertools, trace):
             yield env.timeout(inter_arrival_time)
 
             args.results["n_ankles"] = patient_count
-            trace(f"{env.now:.2f}: ANKLE arrival.")
+            trace(f"{env.now:.2f}: ANKLE arrival.", trace_enabled=trace_enabled)
 
     return (ankle_arrivals_generator,)
 
@@ -386,7 +382,7 @@ def _(
     simpy,
     wrist_arrivals_generator,
 ):
-    def single_run(experiment, rep=0, run_length=RUN_LENGTH):
+    def single_run(experiment, rep=0, run_length=RUN_LENGTH, trace_enabled=False):
         """
         Perform a single run of the model and return the results
 
@@ -414,10 +410,10 @@ def _(
         env = simpy.Environment()
 
         # we pass all arrival generators to simpy
-        env.process(shoulder_arrivals_generator(env, experiment))
-        env.process(hip_arrivals_generator(env, experiment))
-        env.process(wrist_arrivals_generator(env, experiment))
-        env.process(ankle_arrivals_generator(env, experiment))
+        env.process(shoulder_arrivals_generator(env, trace_enabled, experiment))
+        env.process(hip_arrivals_generator(env, trace_enabled, experiment))
+        env.process(wrist_arrivals_generator(env, trace_enabled, experiment))
+        env.process(ankle_arrivals_generator(env, trace_enabled, experiment))
 
         # run for warm-up + results collection period
         env.run(until=run_length)
@@ -430,11 +426,10 @@ def _(
 
 @app.cell
 def _(Experiment, single_run):
-    TRACE = True
     experiment = Experiment()
-    results = single_run(experiment)
+    results = single_run(experiment, trace_enabled=True)
     results
-    return (TRACE,)
+    return
 
 
 if __name__ == "__main__":
