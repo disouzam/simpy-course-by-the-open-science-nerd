@@ -55,10 +55,11 @@ def _(mo):
 def _():
     import itertools
 
+    import colored as cd
     import numpy as np
     import simpy
 
-    return itertools, np, simpy
+    return cd, itertools, np, simpy
 
 
 @app.cell
@@ -269,98 +270,101 @@ def _(mo):
     return
 
 
-@app.function
-def patient_pathway(patient_id, trace_enabled, env, args):
-    """Process a patient through the acute ward and rehab unit.
-    Simpy generator function.
+@app.cell
+def _(cd):
+    def patient_pathway(patient_id, trace_enabled, env, args):
+        """Process a patient through the acute ward and rehab unit.
+        Simpy generator function.
 
-    Parameters:
-    -----------
-    patient_id: int
-        A unique id representing the patient in the process
+        Parameters:
+        -----------
+        patient_id: int
+            A unique id representing the patient in the process
 
-    env: simpy.Environment
-        The simulation environment
+        env: simpy.Environment
+            The simulation environment
 
-    args: Experiment
-        Container class for the simulation parameters/results.
-    """
-    arrival_time = env.now
+        args: Experiment
+            Container class for the simulation parameters/results.
+        """
+        arrival_time = env.now
 
-    with args.acute_ward.request() as acute_bed_request:
-        yield acute_bed_request
+        with args.acute_ward.request() as acute_bed_request:
+            yield acute_bed_request
 
-        acute_admit_time = env.now
-        wait_for_acute = acute_admit_time - arrival_time
-        args.results["waiting_acute"].append(wait_for_acute)
+            acute_admit_time = env.now
+            wait_for_acute = acute_admit_time - arrival_time
+            args.results["waiting_acute"].append(wait_for_acute)
 
-        if wait_for_acute < 0.01:
+            if wait_for_acute < 0.01:
+                trace(
+                    f"{env.now:.2f}: {cd.Fore.white}{cd.Back.green}Patient {patient_id} admitted to acute ward."
+                    + f"(IMMEDIATE ADMISSION){cd.Style.reset}",
+                    trace_enabled,
+                )
+            else:
+                trace(
+                    f"{env.now:.2f}: {cd.Fore.white}{cd.Back.red}Patient {patient_id} admitted to acute ward."
+                    + f"(waited {wait_for_acute:.2f} days){cd.Style.reset}",
+                    trace_enabled,
+                )
+
+            # Simulate acute care treatment
+            acute_care_duration = args.acute_los.sample()
+            yield env.timeout(acute_care_duration)
+
+            # Patient is now medically ready for rehabilitation
+            medically_ready_time = env.now
             trace(
-                f"{env.now:.2f}: Patient {patient_id} admitted to acute ward."
-                + "(IMMEDIATE ADMISSION)",
+                f"{env.now:.2f}: {cd.Fore.black}{cd.Back.yellow}Patient {patient_id} medically ready for rehab{cd.Style.reset}",
                 trace_enabled,
             )
-        else:
-            trace(
-                f"{env.now:.2f}: Patient {patient_id} admitted to acute ward."
-                + f"(waited {wait_for_acute:.2f} days)",
-                trace_enabled,
-            )
 
-        # Simulate acute care treatment
-        acute_care_duration = args.acute_los.sample()
-        yield env.timeout(acute_care_duration)
+            # Request a rehab bed but don't release the acute bed immediately
+            # Note we are still within the "with" context manager for the acute bed
+            # This is where bed blocking occurs. We wait here until the rehab bed
+            # is available. Make sure the indentation is correct or you will release
+            rehab_bed = args.rehab_unit.request()
+            yield rehab_bed
 
-        # Patient is now medically ready for rehabilitation
-        medically_ready_time = env.now
+            # Now we have a rehab bed, we can transfer the patient
+            transfer_time = env.now
+            bed_blocking_duration = transfer_time - medically_ready_time
+            args.results["bed_blocking_times"].append(bed_blocking_duration)
+
+            if bed_blocking_duration < 0.01:
+                trace(
+                    f"{env.now:.2f}: {cd.Fore.black}{cd.Back.dark_sea_green_3b}Patient {patient_id} transferred to rehab. "
+                    + f"(IMMEDIATE TRANSFERENCE TO REHAB. No blocking of acute bed){cd.Style.reset}",
+                    trace_enabled,
+                )
+            else:
+                trace(
+                    f"{env.now:.2f}: {cd.Fore.white}{cd.Back.rosy_brown}Patient {patient_id} transferred to rehab. "
+                    + f"(blocked acute bed for {bed_blocking_duration:.2f} days){cd.Style.reset}",
+                    trace_enabled,
+                )
+
+        # Acute bed is now released
+        # Note the indentation!  We are now outside of the with context manager.
+        # This automatically releases the simpy resource.
+
+        # Simulate rehabilitation stay
+        rehab_duration = args.rehab_los.sample()
+        yield env.timeout(rehab_duration)
+
+        # Patient completes rehabilitation and is discharged
+        discharge_time = env.now
+
+        # Note: we need to explicitly call release on the rehab resource.
+        args.rehab_unit.release(rehab_bed)
+
         trace(
-            f"{env.now:.2f}: Patient {patient_id} medically ready for rehab",
+            f"{discharge_time:.2f}: Patient {patient_id} discharged from Rehab.",
             trace_enabled,
         )
 
-        # Request a rehab bed but don't release the acute bed immediately
-        # Note we are still within the "with" context manager for the acute bed
-        # This is where bed blocking occurs. We wait here until the rehab bed
-        # is available. Make sure the indentation is correct or you will release
-        rehab_bed = args.rehab_unit.request()
-        yield rehab_bed
-
-        # Now we have a rehab bed, we can transfer the patient
-        transfer_time = env.now
-        bed_blocking_duration = transfer_time - medically_ready_time
-        args.results["bed_blocking_times"].append(bed_blocking_duration)
-
-        if bed_blocking_duration < 0.01:
-            trace(
-                f"{env.now:.2f}: Patient {patient_id} transferred to rehab. "
-                + "(IMMEDIATE TRANSFERENCE TO REHAB. No blocking of acute bed)",
-                trace_enabled,
-            )
-        else:
-            trace(
-                f"{env.now:.2f}: Patient {patient_id} transferred to rehab. "
-                + f"(blocked acute bed for {bed_blocking_duration:.2f} days)",
-                trace_enabled,
-            )
-
-    # Acute bed is now released
-    # Note the indentation!  We are now outside of the with context manager.
-    # This automatically releases the simpy resource.
-
-    # Simulate rehabilitation stay
-    rehab_duration = args.rehab_los.sample()
-    yield env.timeout(rehab_duration)
-
-    # Patient completes rehabilitation and is discharged
-    discharge_time = env.now
-
-    # Note: we need to explicitly call release on the rehab resource.
-    args.rehab_unit.release(rehab_bed)
-
-    trace(
-        f"{discharge_time:.2f}: Patient {patient_id} discharged from Rehab.",
-        trace_enabled,
-    )
+    return (patient_pathway,)
 
 
 @app.cell(hide_code=True)
@@ -374,7 +378,7 @@ def _(mo):
 
 
 @app.cell
-def _(itertools):
+def _(itertools, patient_pathway):
     def stroke_arrivals_generator(env, trace_enabled, args):
         """
         Arrival process for strokes.
